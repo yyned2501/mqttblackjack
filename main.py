@@ -2,7 +2,7 @@ from libs.game import boom_game, do_game, game_state
 from libs.mqtt import Client, HOST
 from libs.log import logger
 from libs.toml import read
-import json, asyncio
+import json, asyncio, random
 
 HELP_TOPIC = "blackjack/help"
 GAME_TOPIC = "blackjack/games"
@@ -10,6 +10,7 @@ config = read("config/config.toml")
 MYID = config["GAME"]["MYID"]
 
 lock = asyncio.Lock()
+
 
 async def help():
     boom_data = {
@@ -48,12 +49,17 @@ async def start_my_game():
                     if MYID not in data:
                         point = await do_game(amount, remain_point)
                         if point and point > 21:
-                            await client.publish(
-                                HELP_TOPIC,
-                                payload=json.dumps(
-                                    {"userid": MYID, "amount": amount, "point": point}
-                                ),
-                            )
+                            if not config["GAME"].get("gift_model", False):
+                                await client.publish(
+                                    HELP_TOPIC,
+                                    payload=json.dumps(
+                                        {
+                                            "userid": MYID,
+                                            "amount": amount,
+                                            "point": point,
+                                        }
+                                    ),
+                                )
             except Exception as e:
                 logger.error(e)
 
@@ -71,7 +77,9 @@ async def fetch_games():
             except Exception as e:
                 logger.error(e)
             finally:
-                await asyncio.sleep(sleep)
+                delta = int(sleep / 10)
+                delta = random.randint(-delta, delta)
+                await asyncio.sleep(sleep + delta)
 
 
 async def main():
