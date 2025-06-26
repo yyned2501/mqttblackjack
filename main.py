@@ -56,6 +56,7 @@ async def start_my_game():
 
 
 async def fetch_games():
+    sleep = config["GAME"].get("sleep", 60)
     async with Client(HOST) as client:
         while True:
             try:
@@ -67,7 +68,7 @@ async def fetch_games():
             except Exception as e:
                 logger.error(e)
             finally:
-                await asyncio.sleep(10)
+                await asyncio.sleep(sleep)
 
 
 async def main():
