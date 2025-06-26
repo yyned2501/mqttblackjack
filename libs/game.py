@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from libs.log import logger
 from libs.toml import read
 
-cookie = read("config.toml")["BASIC"]["COOKIE"]
+cookie = read("config/config.toml")["BASIC"]["COOKIE"]
 url = "https://springsunday.net/blackjack.php"
 headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
