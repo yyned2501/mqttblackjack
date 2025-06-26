@@ -1,0 +1,4 @@
+aiomqtt
+aiohttp
+bs4
+lxml
