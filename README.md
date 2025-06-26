@@ -6,6 +6,7 @@ services:
     container_name: blackjack
     volumes:
       - ./config:/app/config
+      - ./logs:/app/logs
     environment:
       - TZ=Asia/Shanghai
       - GIT_REMOTE=https://github.com/yyned2501/mqttblackjack.git
