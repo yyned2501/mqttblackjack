@@ -4,3 +4,4 @@ HOST = "xxx"
 [GAME]
 bonus = 100
 remain_point = 18
+sleep = 60
