@@ -9,6 +9,8 @@ GAME_TOPIC = "blackjack/games"
 config = read("config/config.toml")
 MYID = config["GAME"]["MYID"]
 
+lock = asyncio.Lock()
+
 async def help():
     boom_data = {
         "game": "hit",
@@ -20,15 +22,16 @@ async def help():
         try:
             await client.subscribe(HELP_TOPIC)
             async for message in client.messages:
-                data = json.loads(message.payload)
-                userid = data["userid"]
-                if not (userid == MYID):
-                    if data.get("point", 0) > 21:
-                        boom_data["userid"] = userid
-                        boom_data["amount"] = data["amount"]
-                        await boom_game(boom_data, MYID)
-                else:
-                    logger.info("自己的消息，不平局")
+                async with lock:
+                    data = json.loads(message.payload)
+                    userid = data["userid"]
+                    if not (userid == MYID):
+                        if data.get("point", 0) > 21:
+                            boom_data["userid"] = userid
+                            boom_data["amount"] = data["amount"]
+                            await boom_game(boom_data, MYID)
+                    else:
+                        logger.info("自己的消息，不平局")
         except Exception as e:
             logger.error(e)
 
@@ -40,16 +43,17 @@ async def start_my_game():
         await client.subscribe(GAME_TOPIC)
         async for message in client.messages:
             try:
-                data = json.loads(message.payload)
-                if MYID not in data:
-                    point = await do_game(amount, remain_point)
-                    if point and point > 21:
-                        await client.publish(
-                            HELP_TOPIC,
-                            payload=json.dumps(
-                                {"userid": MYID, "amount": amount, "point": point}
-                            ),
-                        )
+                async with lock:
+                    data = json.loads(message.payload)
+                    if MYID not in data:
+                        point = await do_game(amount, remain_point)
+                        if point and point > 21:
+                            await client.publish(
+                                HELP_TOPIC,
+                                payload=json.dumps(
+                                    {"userid": MYID, "amount": amount, "point": point}
+                                ),
+                            )
             except Exception as e:
                 logger.error(e)
 
