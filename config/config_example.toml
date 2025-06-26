@@ -5,3 +5,4 @@ HOST = "xxx"
 bonus = 100
 remain_point = 18
 sleep = 60
+MYID = 0

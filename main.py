@@ -8,7 +8,7 @@ HELP_TOPIC = "blackjack/help"
 GAME_TOPIC = "blackjack/games"
 MYID = 100727
 config = read("config/config.toml")
-
+MYID = config["GAME"]["MYID"]
 
 async def help():
     boom_data = {
