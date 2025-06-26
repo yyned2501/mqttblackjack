@@ -19,9 +19,9 @@ async def help():
         "amount": 0,
     }
     async with Client(HOST) as client:
-        try:
-            await client.subscribe(HELP_TOPIC)
-            async for message in client.messages:
+        await client.subscribe(HELP_TOPIC)
+        async for message in client.messages:
+            try:
                 async with lock:
                     data = json.loads(message.payload)
                     userid = data["userid"]
@@ -32,8 +32,8 @@ async def help():
                             await boom_game(boom_data, MYID)
                     else:
                         logger.info("自己的消息，不平局")
-        except Exception as e:
-            logger.error(e)
+            except Exception as e:
+                logger.error(e)
 
 
 async def start_my_game():
