@@ -2,6 +2,8 @@
 COOKIE = "aaa"
 HOST = "xxx"
 MYID = 111
+MQTT_USER = ""
+MQTT_PASSWORD = ""
 [GAME]
 bonus = 100
 remain_point = 18

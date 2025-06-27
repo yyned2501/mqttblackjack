@@ -15,7 +15,11 @@ MYID = config["BASIC"].get(
     "MYID",
     config["GAME"].get("MYID", 0),
 )
+
 HOST = config["BASIC"]["HOST"]
+MQTT_USER = config["BASIC"]["MQTT_USER"]
+MQTT_PASSWORD = config["BASIC"]["MQTT_PASSWORD"]
+
 if MYID == 0:
     logger.error("未获取到用户id，不自动开局")
 lock = asyncio.Lock()
@@ -112,7 +116,12 @@ async def fetch_games(client: Client):
 
 
 async def main():
-    client = Client(HOST, identifier=f"{MYID}_{hash(time.time())}")
+    client = Client(
+        HOST,
+        username=MQTT_USER,
+        password=MQTT_PASSWORD,
+        identifier=f"{MYID}_{hash(time.time())}",
+    )
     interval = 5
     while True:
         try:
