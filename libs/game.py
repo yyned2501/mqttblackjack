@@ -51,8 +51,8 @@ async def game(data):
                         return None, None
                 else:
                     raise (response.status)
-        except:
-            pass
+        except Exception as e:
+            logger.error(e, exc_info=True)
 
 
 async def do_game(amount=100, remain_point=18, my_userid=0):
@@ -154,7 +154,7 @@ async def game_state(userid):
                         logger.error(response.status)
                         raise (response.status)
             except Exception as e:
-                logger.error(e)
+                logger.error(e, exc_info=True)
                 error += 1
                 logger.error(f"请求错误{error}次")
 
