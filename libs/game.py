@@ -145,7 +145,11 @@ async def game_state(userid):
                         forms = soup.select("input[value='刷新']")
                         if forms:
                             state.append(userid)
-                        return state
+                        win_rate = soup.select_one(
+                            "table:nth-of-type(2) tr:nth-of-type(5) td:nth-of-type(2)"
+                        )
+                        win_rate_num = float(win_rate.text.strip("%")) / 100
+                        return state, win_rate_num
                     else:
                         logger.error(response.status)
                         raise (response.status)

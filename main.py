@@ -1,101 +1,130 @@
+import time
+import traceback
 from libs.game import boom_game, do_game, game_state
-from libs.mqtt import Client, HOST
+from libs.mqtt import Client
 from libs.log import logger
 from libs.toml import read
 import json, asyncio, random
+from aiomqtt import MqttError, Message
+
 
 HELP_TOPIC = "blackjack/help"
 GAME_TOPIC = "blackjack/games"
 config = read("config/config.toml")
-MYID = config["GAME"]["MYID"]
-
+MYID = config["BASIC"].get(
+    "MYID",
+    config["GAME"].get("MYID", 0),
+)
+HOST = config["BASIC"]["HOST"]
+if MYID == 0:
+    logger.error("未获取到用户id，不自动开局")
 lock = asyncio.Lock()
+g = {}
 
 
-async def help():
+async def help(_: Client, message: Message):
     boom_data = {
         "game": "hit",
         "start": "yes",
         "userid": 0,
         "amount": 0,
     }
+    async with lock:
+        data = json.loads(message.payload)
+        userid = data["userid"]
+        if not (userid == MYID):
+            if data.get("point", 0) > 21:
+                boom_data["userid"] = userid
+                boom_data["amount"] = data["amount"]
+                await boom_game(boom_data, MYID)
+        else:
+            logger.debug("自己的消息，不平局")
+
+
+async def start_my_game(client: Client, message: Message):
+    # 读取下注点数，如果不是100, 1000, 10000, 100000，强制改成100
+    amount = config["GAME"].get("bonus", 100)
+    if amount not in [100, 1000, 10000, 100000]:
+        amount = 100
+    # 读取保留点数，默认值18
+    remain_point = config["GAME"].get("remain_point", 18)
+    # 读取自助模式，默认值false
+    gift_model = config["GAME"].get("gift_model", False)
+    git_remain_point = config["GAME"].get("git_remain_point", 20)
+    # 计算本局是否自助
+    boom_rate = config["GAME"].get("boom_rate", 0)
+    boom = random.random() < boom_rate
+    win_rate = config["GAME"].get("win_rate", 0.58)
+    print(g)
+    if g["win_rate"] > win_rate:
+        logger.info(f"当前胜率{g["win_rate"]}超过{win_rate},自动开启自助")
+        gift_model = True
+    if gift_model:
+        remain_point = git_remain_point
+        amount = 100
+    async with lock:
+        data = json.loads(message.payload)
+        if MYID not in data:
+            point = await do_game(amount, remain_point)
+            if point and point > 21:
+                if not (gift_model or boom):
+                    await client.publish(
+                        HELP_TOPIC,
+                        payload=json.dumps(
+                            {
+                                "userid": MYID,
+                                "amount": amount,
+                                "point": point,
+                            }
+                        ),
+                    )
+
+
+async def listen(client: Client):
+    try:
+        async for message in client.messages:
+            if message.topic.matches(HELP_TOPIC):
+                await help(client, message)
+            elif message.topic.matches(GAME_TOPIC) and MYID > 0:
+                await start_my_game(client, message)
+            else:
+                logger.warning(f"未知主题{message.topic}")
+    except Exception as e:
+        print(f"处理消息时发生错误: {e}")
+
+
+async def fetch_games(client: Client):
+    sleep = config["GAME"].get("sleep", 60)
     while True:
         try:
-            async with Client(HOST) as client:
-                await client.subscribe(HELP_TOPIC)
-                async for message in client.messages:
-                    try:
-                        async with lock:
-                            data = json.loads(message.payload)
-                            userid = data["userid"]
-                            if not (userid == MYID):
-                                if data.get("point", 0) > 21:
-                                    boom_data["userid"] = userid
-                                    boom_data["amount"] = data["amount"]
-                                    await boom_game(boom_data, MYID)
-                            else:
-                                logger.info("自己的消息，不平局")
-                    except Exception as e:
-                        logger.error(e)
+            games, win_rate = await game_state(MYID)
+            g["win_rate"] = win_rate
+            await client.publish(
+                GAME_TOPIC,
+                payload=json.dumps(games),
+            )
         except Exception as e:
-            logger.error(e)
-
-async def start_my_game():
-    while True:
-        try:
-            amount = config["GAME"]["bonus"]
-            remain_point = config["GAME"]["remain_point"]
-            async with Client(HOST) as client:
-                await client.subscribe(GAME_TOPIC)
-                async for message in client.messages:
-                    try:
-                        async with lock:
-                            data = json.loads(message.payload)
-                            if MYID not in data:
-                                point = await do_game(amount, remain_point)
-                                if point and point > 21:
-                                    if not config["GAME"].get("gift_model", False):
-                                        await client.publish(
-                                            HELP_TOPIC,
-                                            payload=json.dumps(
-                                                {
-                                                    "userid": MYID,
-                                                    "amount": amount,
-                                                    "point": point,
-                                                }
-                                            ),
-                                        )
-                    except Exception as e:
-                        logger.error(e)
-        except Exception as e:
-            logger.error(e)
-
-
-async def fetch_games():
-    while True:
-        try:
-            sleep = config["GAME"].get("sleep", 60)
-            async with Client(HOST) as client:
-                while True:
-                    try:
-                        games = await game_state(MYID)
-                        await client.publish(
-                            GAME_TOPIC,
-                            payload=json.dumps(games),
-                        )
-                    except Exception as e:
-                        logger.error(e)
-                    finally:
-                        delta = int(sleep / 10)
-                        delta = random.randint(-delta, delta)
-                        await asyncio.sleep(sleep + delta)
-        except Exception as e:
-            logger.error(e)
-
+            logger.error(e, exc_info=True)
+        finally:
+            delta = int(sleep / 10)
+            delta = random.randint(-delta, delta)
+            await asyncio.sleep(sleep + delta)
 
 
 async def main():
-    await asyncio.gather(help(), start_my_game(), fetch_games())
+    client = Client(HOST, identifier=f"{MYID}_{hash(time.time())}")
+    interval = 5
+    while True:
+        try:
+            async with client:
+                await client.subscribe(HELP_TOPIC)
+                await client.subscribe(GAME_TOPIC)
+                await asyncio.gather(listen(client), fetch_games(client))
+        except MqttError:
+            logger.error(f"Connection lost; Reconnecting in {interval} seconds ...")
+            await asyncio.sleep(interval)
+        except Exception as e:
+            logger.error(e, exc_info=True)
 
 
 if __name__ == "__main__":

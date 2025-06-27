@@ -1,8 +1,11 @@
 [BASIC]
 COOKIE = "aaa"
 HOST = "xxx"
+MYID = 111
 [GAME]
 bonus = 100
 remain_point = 18
 sleep = 60
-MYID = 0
+git_model = false
+boom_rate = 0
+win_rate = 0.58
