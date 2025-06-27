@@ -65,7 +65,7 @@ async def start_my_game(client: Client, message: Message):
             if gift_model:
                 remain_point = gift_remain_point
                 amount = gift_bonus
-            point = await do_game(amount, remain_point, MYID)
+            point = await do_game(amount, remain_point)
             if point and point > 21:
                 if not (gift_model or boom):
                     await client.publish(

@@ -21,22 +21,15 @@ headers = {
 }
 
 
-async def game(data, url, headers, max_retries=3):
-    # 在循环外创建 ClientSession，复用会话
-    async with aiohttp.ClientSession() as session:
-        for attempt in range(max_retries):
-            try:
-                # 设置超时：总超时10秒，连接超时5秒，读取超时5秒
-                timeout = aiohttp.ClientTimeout(total=10, connect=5, sock_read=5)
-                async with session.post(
-                    url, headers=headers, data=data, timeout=timeout
-                ) as response:
+async def game(data):
+    err = 0
+    while err < 3:
+        try:
+            async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(10)
+            ) as session:
+                async with session.post(url, headers=headers, data=data) as response:
                     if response.status == 200:
-                        # 确保响应是 HTML
-                        if "text/html" not in response.content_type:
-                            logger.error("响应不是 HTML，返回 None")
-                            return None, None
-
                         soup = BeautifulSoup(await response.text(), "lxml")
                         element = soup.select_one("#details b")
                         if element:
@@ -45,62 +38,38 @@ async def game(data, url, headers, max_retries=3):
                                 point_str = text.split("=")[-1].strip()
                                 if point_str:
                                     point = int(point_str)
-                                    return point, None
                                 else:
-                                    logger.error("点数字段为空，返回 None")
-                                    return None, None
-                            except ValueError as e:
-                                logger.error(f"点数解析失败: {e}, 返回 None")
-                                return None, None
+                                    raise
+                            except:
+                                logger.error("未能获取到页面点数，返回22")
+                                point = 22
+                            return point, None
                         else:
                             element = soup.select_one(
                                 "#outer table table td"
                             ) or soup.select_one("form strong")
                             if element:
-                                message = element.text.strip()
-                                logger.warning(f"页面返回提示: {message}")
-                                return None, message
-                            logger.error("未能获取到页面点数，返回 None")
+                                logger.warning(element.text.strip())
+                                return None, element.text.strip()
+                            logger.error("未能获取到页面点数，返回None")
                             return None, None
                     else:
-                        logger.error(f"请求失败，状态码: {response.status}")
-                        raise aiohttp.ClientResponseError(
-                            status=response.status,
-                            message=await response.text(),
-                            headers=response.headers,
-                            request_info=response.request_info,
-                        )
-
-            except asyncio.TimeoutError as e:
-                logger.error(f"请求超时: {e}")
-                if attempt < max_retries - 1:
-                    logger.info(f"第 {attempt + 1} 次重试...")
-                    await asyncio.sleep(2)  # 重试前等待2秒
-                    continue
-                logger.error("达到最大重试次数，返回 None")
-                return None, None
-
-            except aiohttp.ClientError as e:
-                logger.error(f"网络错误: {e}")
-                if attempt < max_retries - 1:
-                    logger.info(f"第 {attempt + 1} 次重试...")
-                    await asyncio.sleep(2)
-                    continue
-                logger.error("达到最大重试次数，返回 None")
-                return None, None
-
-            except Exception as e:
-                logger.error(f"意外错误: {e}", exc_info=True)
-                return None, None
+                        raise (response.status)
+        except asyncio.TimeoutError as e:
+            logger.error(e, exc_info=True)
+        except Exception as e:
+            logger.error(e, exc_info=True)
+        finally:
+            err += 1
 
 
-async def do_game(amount=100, remain_point=18, my_userid=0):
+async def do_game(amount=100, remain_point=18):
     start_data = {
         "game": "hit",
         "start": "yes",
         "amount": amount,
     }
-    continue_data = {"game": "hit", "continue": "yes", "userid": my_userid}
+    continue_data = {"game": "hit", "continue": "yes"}
     hit_data = {"game": "hit", "userid": 0}
     stop_data = {"game": "stop", "userid": 0}
     s, e = await game(start_data)
