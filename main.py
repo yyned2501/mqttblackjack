@@ -23,48 +23,45 @@ g = {}
 
 
 async def help(_: Client, message: Message):
-    boom_data = {
-        "game": "hit",
-        "start": "yes",
-        "userid": 0,
-        "amount": 0,
-    }
     async with lock:
         data = json.loads(message.payload)
         userid = data["userid"]
         if not (userid == MYID):
             if data.get("point", 0) > 21:
-                boom_data["userid"] = userid
-                boom_data["amount"] = data["amount"]
+                boom_data = {
+                    "game": "hit",
+                    "start": "yes",
+                    "userid": userid,
+                    "amount": data["amount"],
+                }
                 await boom_game(boom_data, MYID)
         else:
             logger.debug("自己的消息，不平局")
 
 
 async def start_my_game(client: Client, message: Message):
-    # 读取下注点数，如果不是100, 1000, 10000, 100000，强制改成100
-    amount = config["GAME"].get("bonus", 100)
-    if amount not in [100, 1000, 10000, 100000]:
-        amount = 100
-    # 读取保留点数，默认值18
-    remain_point = config["GAME"].get("remain_point", 18)
-    # 读取自助模式，默认值false
-    gift_model = config["GAME"].get("gift_model", False)
-    git_remain_point = config["GAME"].get("git_remain_point", 20)
-    # 计算本局是否自助
-    boom_rate = config["GAME"].get("boom_rate", 0)
-    boom = random.random() < boom_rate
-    win_rate = config["GAME"].get("win_rate", 0.58)
-    print(g)
-    if g["win_rate"] > win_rate:
-        logger.info(f"当前胜率{g["win_rate"]}超过{win_rate},自动开启自助")
-        gift_model = True
-    if gift_model:
-        remain_point = git_remain_point
-        amount = 100
     async with lock:
         data = json.loads(message.payload)
         if MYID not in data:
+            # 读取下注点数，如果不是100, 1000, 10000, 100000，强制改成100
+            amount = config["GAME"].get("bonus", 100)
+            if amount not in [100, 1000, 10000, 100000]:
+                amount = 100
+            # 读取保留点数，默认值18
+            remain_point = config["GAME"].get("remain_point", 18)
+            # 读取自助模式，默认值false
+            gift_model = config["GAME"].get("gift_model", False)
+            git_remain_point = config["GAME"].get("git_remain_point", 20)
+            # 计算本局是否自助
+            boom_rate = config["GAME"].get("boom_rate", 0)
+            boom = random.random() < boom_rate
+            win_rate = config["GAME"].get("win_rate", 0.58)
+            if g["win_rate"] > win_rate:
+                logger.info(f"当前胜率{g["win_rate"]}超过{win_rate},自动开启自助")
+                gift_model = True
+            if gift_model:
+                remain_point = git_remain_point
+                amount = 100
             point = await do_game(amount, remain_point)
             if point and point > 21:
                 if not (gift_model or boom):
