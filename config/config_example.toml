@@ -7,5 +7,7 @@ bonus = 100
 remain_point = 18
 sleep = 60
 git_model = false
+gift_remain_point = 20
+gift_bonus = 100
 boom_rate = 0
 win_rate = 0.58

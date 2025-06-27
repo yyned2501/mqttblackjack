@@ -55,19 +55,20 @@ async def game(data):
             pass
 
 
-async def do_game(amount=100, remain_point=18):
+async def do_game(amount=100, remain_point=18, my_userid=0):
     start_data = {
         "game": "hit",
         "start": "yes",
         "amount": amount,
     }
-    continue_data = {"game": "hit", "continue": "yes"}
+    continue_data = {"game": "hit", "continue": "yes", "userid": my_userid}
     hit_data = {"game": "hit", "userid": 0}
     stop_data = {"game": "stop", "userid": 0}
     s, e = await game(start_data)
-    if not s:
+    while not s:
         if e == "您必须先完成当前的游戏。":
             s, e = await game(continue_data)
+            await asyncio.sleep(5)
         else:
             return
     while s < remain_point:
@@ -77,7 +78,7 @@ async def do_game(amount=100, remain_point=18):
             s = s_
         else:
             if e == "Starship":
-                logger.warn("当前点数{s}，对局已结束")
+                logger.warning("当前点数{s}，对局已结束")
                 return s
             else:
                 logger.error("当前点数{s}，访问错误，等待重试")
@@ -96,9 +97,8 @@ async def boom_game(boom_data, my_userid):
     start_data = boom_data
     hit_data = {"game": "hit", "userid": my_userid}
     stop_data = {"game": "stop", "userid": my_userid}
-
     s, e = await game(start_data)
-    if not s:
+    while not s:
         if e == "该对局已结束":
             logger.warning(f"平局：对局被人抢了")
             return None
