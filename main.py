@@ -106,7 +106,7 @@ async def listen(client: Client):
             if message.topic.matches(HELP_TOPIC):
                 await help(client, message)
             elif message.topic.matches(GAME_TOPIC) and MYID > 0:
-                if message.payload==MYID:
+                if message.payload.decode()==str(MYID):
                     sleeptime=random.randint(90,120)
                     logger.info(f"队友帮助平局完成，随机等待{sleeptime}秒后开始新对局")
                     await asyncio.sleep(sleeptime)
@@ -194,7 +194,7 @@ async def main():
         try:
             async with client:
                 await client.subscribe(HELP_TOPIC)
-                #await client.subscribe(GAME_TOPIC)
+                await client.subscribe(GAME_TOPIC)
                 await asyncio.gather(listen(client), fetch_games(client))
         except MqttError:
             logger.error(f"Connection lost; Reconnecting in {interval} seconds ...")
