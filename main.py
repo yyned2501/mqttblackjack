@@ -1,4 +1,6 @@
-import time
+import time as time_module
+from datetime import time as time_class
+from datetime import datetime
 import traceback
 from libs.game import boom_game, do_game, game_state
 from libs.mqtt import Client
@@ -98,21 +100,50 @@ async def listen(client: Client):
 
 
 async def fetch_games(client: Client):
+    sw_flag = False
+
+    time_ranges = [
+        ('00:01','00:35'),
+        ('08:00','11:00'),
+        ('12:00','15:00'),
+        ('16:00','18:00'),
+        ('19:30','21:30'),
+        ('22:30','23:50'),        
+    ]
+
     sleep = config["GAME"].get("sleep", 60)
+
     while True:
-        try:
-            games, win_rate = await game_state(MYID)
-            g["win_rate"] = win_rate
-            await client.publish(
-                GAME_TOPIC,
-                payload=json.dumps(games),
-            )
-        except Exception as e:
-            logger.error(e, exc_info=True)
-        finally:
-            delta = int(sleep / 10)
-            delta = random.randint(-delta, delta)
-            await asyncio.sleep(sleep + delta)
+        if is_within_time_ranges(time_ranges):
+            if sw_flag == False:
+                sw_flag = True
+                logger.info(f"当前时间段为挂机时间，启动")
+            try:
+                games, win_rate = await game_state(MYID)
+                g["win_rate"] = win_rate
+                await client.publish(
+                    GAME_TOPIC,
+                    payload=json.dumps(games),
+                )
+            except Exception as e:
+                logger.error(e, exc_info=True)
+            finally:
+                delta = int(sleep / 10)
+                delta = random.randint(-delta, delta)
+                await asyncio.sleep(sleep + delta)
+        else:
+            if sw_flag:
+                sw_flag = False
+                logger.info(f"当前时间段为休息时间，关闭")
+
+def is_within_time_ranges(time_ranges):
+    now = datetime.now().time()    
+    for start_str, end_str in time_ranges:
+        start = time_class.fromisoformat(start_str)
+        end = time_class.fromisoformat(end_str)
+        if start <= now <= end:
+            return True
+    return False
 
 
 async def main():
@@ -120,7 +151,7 @@ async def main():
         HOST,
         username=MQTT_USER,
         password=MQTT_PASSWORD,
-        identifier=f"{MYID}_{hash(time.time())}",
+        identifier=f"{MYID}_{hash(time_module.time())}",
     )
     interval = 5
     while True:
