@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+import random
 from bs4 import BeautifulSoup
 from libs.log import logger
 from libs.toml import read
@@ -91,6 +92,7 @@ async def do_game(amount=100, remain_point=18):
             return
     while s < remain_point:
         logger.info(f"当前点数{s}，继续抓牌")
+        await asyncio.sleep(random.randint(8, 20))
         s_, e = await game(hit_data)
         if s_:
             s = s_
@@ -129,6 +131,7 @@ async def boom_game(boom_data, my_userid):
             return None
     while s < 21:
         logger.info(f"平局：当前点数{s}，继续抓牌")
+        await asyncio.sleep(random.randint(8, 20))
         s_, e = await game(hit_data)
         if s_:
             s = s_
