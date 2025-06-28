@@ -162,7 +162,7 @@ async def fetch_games(client: Client):
                 sw_flag1 = False
                 sw_flag2 = False
                 logger.info("当前时间段为休息时间，关闭。。。。。。。。。。。。。。。。。。。。。。。。。。。。")
-
+            await asyncio.sleep(10)
 def is_within_time_ranges(time_ranges):
     now = datetime.now().time()    
     for start_str, end_str in time_ranges:
