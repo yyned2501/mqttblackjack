@@ -30,7 +30,7 @@ lock = asyncio.Lock()
 g = {}
 
 
-async def help(_: Client, message: Message):
+async def help(client: Client, message: Message):
     async with lock:
         data = json.loads(message.payload)
         userid = data["userid"]
@@ -43,68 +43,73 @@ async def help(_: Client, message: Message):
                     "amount": data["amount"],
                 }
                 await boom_game(boom_data, MYID)
+                await client.publish(
+                    GAME_TOPIC,
+                    payload=json.dumps(userid),
+                )
         else:
             logger.debug("自己的消息，不平局")
 
 
-async def start_my_game(client: Client, data: list[int]):
+async def start_my_game(client: Client):
     async with lock:
-        if MYID not in data:
-            # 读取下注点数，如果不是100, 1000, 10000, 100000，强制改成100
-            amount = config["GAME"].get("bonus", 100)
-            if amount not in [100, 1000, 10000, 100000]:
-                amount = 100
-            # 读取保留点数，默认值18
-            remain_point = config["GAME"].get("remain_point", 18)
-            # 读取自助模式，默认值false
-            gift_model = config["GAME"].get("gift_model", False)
-            gift_remain_point = config["GAME"].get("gift_remain_point", 20)
-            gift_bonus = config["GAME"].get("gift_bonus", 100)
-            if gift_bonus not in [100, 1000, 10000, 100000]:
-                gift_bonus = 100
+        # 读取下注点数，如果不是100, 1000, 10000, 100000，强制改成100
+        amount = config["GAME"].get("bonus", 100)
+        if amount not in [100, 1000, 10000, 100000]:
+            amount = 100
+        # 读取保留点数，默认值18
+        remain_point = config["GAME"].get("remain_point", 18)
+        # 读取自助模式，默认值false
+        gift_model = config["GAME"].get("gift_model", False)
+        gift_remain_point = config["GAME"].get("gift_remain_point", 20)
+        gift_bonus = config["GAME"].get("gift_bonus", 100)
+        if gift_bonus not in [100, 1000, 10000, 100000]:
+            gift_bonus = 100
 
-            natural_remain_point = config["GAME"].get("natural_remain_point", 16)            
-            natural_bonus = config["GAME"].get("natural_bonus", 100)
-            if natural_bonus not in [100, 1000, 10000, 100000]:
-                natural_bonus = 100
+        natural_remain_point = config["GAME"].get("natural_remain_point", 16)            
+        natural_bonus = config["GAME"].get("natural_bonus", 100)
+        if natural_bonus not in [100, 1000, 10000, 100000]:
+            natural_bonus = 100
 
-            # 计算本局是否自助
-            boom_rate = config["GAME"].get("boom_rate", 0)
-            boom = random.random() < boom_rate
-            win_rate = config["GAME"].get("win_rate", 0.58)
-            if g["win_rate"] > win_rate:
-                logger.info(f"当前胜率{g["win_rate"]}超过{win_rate},自动开启自助")
-                gift_model = True
-            if gift_model:
-                remain_point = gift_remain_point
-                amount = gift_bonus
-            elif g["natural_time"]:
-                remain_point = natural_remain_point
-                amount = natural_bonus            
-            point = await do_game(amount, remain_point)
-            logger.info(f"开局{amount}魔力，点数{point}")
-            if point and point > 21:
-                if not (g["natural_time"] or gift_model or boom):
-                    logger.info(f"寻求队友平局")
-                    await client.publish(
-                        HELP_TOPIC,
-                        payload=json.dumps(
-                            {
-                                "userid": MYID,
-                                "amount": amount,
-                                "point": point,
-                            }
-                        ),
-                    )
+        # 计算本局是否自助
+        boom_rate = config["GAME"].get("boom_rate", 0)
+        boom = random.random() < boom_rate
+        win_rate = config["GAME"].get("win_rate", 0.58)
+        if g["win_rate"] > win_rate:
+            logger.info(f"当前胜率{g["win_rate"]}超过{win_rate},自动开启自助")
+            gift_model = True
+        if gift_model:
+            remain_point = gift_remain_point
+            amount = gift_bonus
+        elif g["natural_time"]:
+            remain_point = natural_remain_point
+            amount = natural_bonus            
+        point = await do_game(amount, remain_point)
+        logger.info(f"开局{amount}魔力，点数{point}")
+        if point and point > 21:
+            if not (g["natural_time"] or gift_model or boom):
+                logger.info(f"寻求队友平局")
+                await client.publish(
+                    HELP_TOPIC,
+                    payload=json.dumps(
+                        {
+                            "userid": MYID,
+                            "amount": amount,
+                            "point": point,
+                        }
+                    ),
+                )
 
 async def listen(client: Client):
     try:
         async for message in client.messages:
             if message.topic.matches(HELP_TOPIC):
                 await help(client, message)
-            #elif message.topic.matches(GAME_TOPIC) and MYID > 0:
-            #    if g["natural_time"] or g["auto_time"]:
-            #        await start_my_game(client, message)
+            elif message.topic.matches(GAME_TOPIC) and MYID > 0:
+                if message.payload==MYID:
+                    logger.info(f"队友帮助平局完成，开始新对局")
+                    await asyncio.sleep(5)
+                    await start_my_game(client)
             else:
                 logger.warning(f"未知主题{message.topic}")
     except Exception as e:
@@ -148,7 +153,8 @@ async def fetch_games(client: Client):
                 #    GAME_TOPIC,
                 #    payload=json.dumps(games),
                 #)
-                await start_my_game(client,games)
+                if MYID not in games:
+                    await start_my_game(client)
                 delta = random.randint(-sleep // 10, sleep // 10)
                 await asyncio.sleep(sleep + delta)
             
