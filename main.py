@@ -147,6 +147,8 @@ async def fetch_games(client: Client):
                     GAME_TOPIC,
                     payload=json.dumps(games),
                 )
+                delta = random.randint(-sleep // 10, sleep // 10)
+                await asyncio.sleep(sleep + delta)
             
             except aiomqtt.exceptions.MqttCodeError as ee:
                 logger.error("MQTT异常，尝试重新连接: %s", ee, exc_info=True)
@@ -154,9 +156,7 @@ async def fetch_games(client: Client):
 
             except Exception as e:
                 logger.error("任务执行失败：%s", e, exc_info=True)
-            finally:
-                delta = random.randint(-sleep // 10, sleep // 10)
-                await asyncio.sleep(sleep + delta)
+                await asyncio.sleep(5)
         else:            
             if sw_flag1 or sw_flag2:
                 sw_flag1 = False
