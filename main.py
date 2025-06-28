@@ -68,7 +68,7 @@ async def start_my_game(client: Client, message: Message):
             natural_bonus = config["GAME"].get("natural_bonus", 100)
             if natural_bonus not in [100, 1000, 10000, 100000]:
                 natural_bonus = 100
-                 
+
             # 计算本局是否自助
             boom_rate = config["GAME"].get("boom_rate", 0)
             boom = random.random() < boom_rate
@@ -124,12 +124,12 @@ async def fetch_games(client: Client):
     auto_time = config["GAME"].get("auto_time", time_ranges)
     natural_mode_time = config["GAME"].get("natural_mode_time", [])
     sleep = config["GAME"].get("sleep", 60)
-
-    while True:        
+    while True:
+            
         g["auto_time"] = is_within_time_ranges(auto_time)
         g["natural_time"] = is_within_time_ranges(natural_mode_time)
         is_active = g["auto_time"] or g["natural_time"]
-
+      
         if is_active:           
             if g["auto_time"] and not sw_flag1:
                 sw_flag1 = True
