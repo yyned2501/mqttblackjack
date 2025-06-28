@@ -84,7 +84,7 @@ async def start_my_game(client: Client, message: Message):
                 amount = natural_bonus            
             point = await do_game(amount, remain_point)
             if point and point > 21:
-                if not (gift_model or boom):
+                if not (g["natural_time"] or gift_model or boom):
                     await client.publish(
                         HELP_TOPIC,
                         payload=json.dumps(
