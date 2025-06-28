@@ -1,9 +1,15 @@
 [BASIC]
-COOKIE = "aaa"
+LANGUAGE = ""
+COOKIE  = ""
+SEC_CH_UA = ''
+SEC_FETCH_DEST = ""
+SEC_FETCH_MODE = ""
+USER_AGENT = ""
 HOST = "xxx"
 MYID = 111
 MQTT_USER = ""
 MQTT_PASSWORD = ""
+
 [GAME]
 bonus = 100
 remain_point = 18
