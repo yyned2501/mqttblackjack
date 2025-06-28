@@ -7,6 +7,7 @@ from libs.mqtt import Client
 from libs.log import logger
 from libs.toml import read
 import json, asyncio, random
+import aiomqtt
 from aiomqtt import MqttError, Message
 
 
@@ -60,13 +61,14 @@ async def start_my_game(client: Client, message: Message):
             gift_model = config["GAME"].get("gift_model", False)
             gift_remain_point = config["GAME"].get("gift_remain_point", 20)
             gift_bonus = config["GAME"].get("gift_bonus", 100)
-
-            
-            natural_remain_point = config["GAME"].get("gift_remain_point", 16)            
-            natural_bonus = config["GAME"].get("natural_bonus", 100)
-
             if gift_bonus not in [100, 1000, 10000, 100000]:
                 gift_bonus = 100
+
+            natural_remain_point = config["GAME"].get("natural_remain_point", 16)            
+            natural_bonus = config["GAME"].get("natural_bonus", 100)
+            if natural_bonus not in [100, 1000, 10000, 100000]:
+                natural_bonus = 100
+                 
             # 计算本局是否自助
             boom_rate = config["GAME"].get("boom_rate", 0)
             boom = random.random() < boom_rate
@@ -79,7 +81,7 @@ async def start_my_game(client: Client, message: Message):
                 amount = gift_bonus
             elif g["natural_time"]:
                 remain_point = natural_remain_point
-                amount = natural_bonus
+                amount = natural_bonus            
             point = await do_game(amount, remain_point)
             if point and point > 21:
                 if not (gift_model or boom):
@@ -100,7 +102,8 @@ async def listen(client: Client):
             if message.topic.matches(HELP_TOPIC):
                 await help(client, message)
             elif message.topic.matches(GAME_TOPIC) and MYID > 0:
-                await start_my_game(client, message)
+                if g["natural_time"] or g["auto_time"]:
+                    await start_my_game(client, message)
             else:
                 logger.warning(f"未知主题{message.topic}")
     except Exception as e:
@@ -145,6 +148,9 @@ async def fetch_games(client: Client):
                     payload=json.dumps(games),
                 )
             
+            except aiomqtt.exceptions.MqttCodeError as ee:
+                logger.error("MQTT异常，尝试重新连接: %s", ee, exc_info=True)
+                raise
 
             except Exception as e:
                 logger.error("任务执行失败：%s", e, exc_info=True)
