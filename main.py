@@ -10,6 +10,7 @@ import json, asyncio, random
 from aiomqtt import MqttError, Message
 
 
+
 HELP_TOPIC = "blackjack/help"
 GAME_TOPIC = "blackjack/games"
 config = read("config/config.toml")
@@ -59,6 +60,11 @@ async def start_my_game(client: Client, message: Message):
             gift_model = config["GAME"].get("gift_model", False)
             gift_remain_point = config["GAME"].get("gift_remain_point", 20)
             gift_bonus = config["GAME"].get("gift_bonus", 100)
+
+            
+            natural_remain_point = config["GAME"].get("gift_remain_point", 16)            
+            natural_bonus = config["GAME"].get("natural_bonus", 100)
+
             if gift_bonus not in [100, 1000, 10000, 100000]:
                 gift_bonus = 100
             # 计算本局是否自助
@@ -71,6 +77,9 @@ async def start_my_game(client: Client, message: Message):
             if gift_model:
                 remain_point = gift_remain_point
                 amount = gift_bonus
+            elif g["natural_time"]:
+                remain_point = natural_remain_point
+                amount = natural_bonus
             point = await do_game(amount, remain_point)
             if point and point > 21:
                 if not (gift_model or boom):
@@ -84,7 +93,6 @@ async def start_my_game(client: Client, message: Message):
                             }
                         ),
                     )
-
 
 async def listen(client: Client):
     try:
@@ -100,8 +108,8 @@ async def listen(client: Client):
 
 
 async def fetch_games(client: Client):
-    sw_flag = False
-
+    sw_flag1 = False
+    sw_flag2 = False
     time_ranges = [
         ('00:01','00:35'),
         ('08:00','11:00'),
@@ -110,31 +118,44 @@ async def fetch_games(client: Client):
         ('19:30','21:30'),
         ('22:30','23:50'),        
     ]
-
+    auto_time = config["GAME"].get("auto_time", time_ranges)
+    natural_mode_time = config["GAME"].get("natural_mode_time", [])
     sleep = config["GAME"].get("sleep", 60)
 
-    while True:
-        if is_within_time_ranges(time_ranges):
-            if sw_flag == False:
-                sw_flag = True
-                logger.info(f"当前时间段为挂机时间，启动！！！！！！！！！！！！！！！！！！！！！！！！！！！！")
+    while True:        
+        g["auto_time"] = is_within_time_ranges(auto_time)
+        g["natural_time"] = is_within_time_ranges(natural_mode_time)
+        is_active = g["auto_time"] or g["natural_time"]
+
+        if is_active:           
+            if g["auto_time"] and not sw_flag1:
+                sw_flag1 = True
+                logger.info("当前时间段为挂机时间，启动！！！！！！！！！！！！！！！！！！！！！！！！！！！！")
+
+            if g["natural_time"] and not sw_flag2:
+                sw_flag2 = True
+                logger.info("当前时间段为自然开局时间，启动！！！！！！！！！！！！！！！！！！！！！！！！！！！！")
+
             try:
                 games, win_rate = await game_state(MYID)
                 g["win_rate"] = win_rate
+
                 await client.publish(
                     GAME_TOPIC,
                     payload=json.dumps(games),
                 )
+            
+
             except Exception as e:
-                logger.error(e, exc_info=True)
+                logger.error("任务执行失败：%s", e, exc_info=True)
             finally:
-                delta = int(sleep / 10)
-                delta = random.randint(-delta, delta)
+                delta = random.randint(-sleep // 10, sleep // 10)
                 await asyncio.sleep(sleep + delta)
-        else:
-            if sw_flag:
-                sw_flag = False
-                logger.info(f"当前时间段为休息时间，关闭。。。。。。。。。。。。。。。。。。。。。。。。。。。。")
+        else:            
+            if sw_flag1 or sw_flag2:
+                sw_flag1 = False
+                sw_flag2 = False
+                logger.info("当前时间段为休息时间，关闭。。。。。。。。。。。。。。。。。。。。。。。。。。。。")
 
 def is_within_time_ranges(time_ranges):
     now = datetime.now().time()    
