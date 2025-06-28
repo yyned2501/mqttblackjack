@@ -117,7 +117,7 @@ async def fetch_games(client: Client):
         if is_within_time_ranges(time_ranges):
             if sw_flag == False:
                 sw_flag = True
-                logger.info(f"当前时间段为挂机时间，启动")
+                logger.info(f"当前时间段为挂机时间，启动！！！！！！！！！！！！！！！！！！！！！！！！！！！！")
             try:
                 games, win_rate = await game_state(MYID)
                 g["win_rate"] = win_rate
@@ -134,7 +134,7 @@ async def fetch_games(client: Client):
         else:
             if sw_flag:
                 sw_flag = False
-                logger.info(f"当前时间段为休息时间，关闭")
+                logger.info(f"当前时间段为休息时间，关闭。。。。。。。。。。。。。。。。。。。。。。。。。。。。")
 
 def is_within_time_ranges(time_ranges):
     now = datetime.now().time()    
