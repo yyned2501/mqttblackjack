@@ -4,22 +4,32 @@ from bs4 import BeautifulSoup
 from libs.log import logger
 from libs.toml import read
 
-cookie = read("config/config.toml")["BASIC"]["COOKIE"]
+config_basic =  read("config/config.toml")["BASIC"]
+language = config_basic.get("LANGUAGE", "zh-CN,zh")
+cookie = config_basic.get("COOKIE", "zh-CN,zh")
+sec_ch_ua = config_basic.get("SEC_CH_UA", '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"')
+sec_fetch_dest = config_basic.get("SEC_FETCH_DEST", "document")
+sec_fetch_mode = config_basic.get("SEC_FETCH_MODE", "cors")
+user_agent = config_basic.get("USER_AGENT", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
 url = "https://springsunday.net/blackjack.php"
 headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "Accept-Language": "zh-CN,zh",
+    "Accept-Encoding": "gzip, deflate",
+    "Accept-Language": language,                    
     "Cookie": cookie,
-    "Sec-Ch-Ua": '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+    #"Origin": "https://springsunday.net",
+    "Priority": "u=0, i",
+    "Referer": "https://springsunday.net/blackjack.php",
+    "Sec-Ch-Ua": sec_ch_ua,
     "Sec-Ch-Ua-Mobile": "?0",
     "Sec-Ch-Ua-Platform": '"Windows"',
-    "Sec-Fetch-Dest": "empty",
-    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Dest": sec_fetch_dest,
+    "Sec-Fetch-Mode": sec_fetch_mode,
     "Sec-Fetch-Site": "same-origin",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-    "X-Requested-With": "XMLHttpRequest",
+    "Sec-Fetch-User": "?1",
+    "upgrade-insecure-requests": "1",
+    "User-Agent": user_agent,
 }
-
 
 async def game(data):
     err = 0
