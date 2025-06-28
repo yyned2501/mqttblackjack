@@ -107,8 +107,9 @@ async def listen(client: Client):
                 await help(client, message)
             elif message.topic.matches(GAME_TOPIC) and MYID > 0:
                 if message.payload==MYID:
-                    logger.info(f"队友帮助平局完成，开始新对局")
-                    await asyncio.sleep(5)
+                    sleeptime=random.randint(90,120)
+                    logger.info(f"队友帮助平局完成，随机等待{sleeptime}秒后开始新对局")
+                    await asyncio.sleep(sleeptime)
                     await start_my_game(client)
             else:
                 logger.warning(f"未知主题{message.topic}")
