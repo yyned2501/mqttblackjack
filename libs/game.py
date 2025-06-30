@@ -5,20 +5,25 @@ from bs4 import BeautifulSoup
 from libs.log import logger
 from libs.toml import read
 
-config_basic =  read("config/config.toml")["BASIC"]
+config_basic = read("config/config.toml")["BASIC"]
 language = config_basic.get("LANGUAGE", "zh-CN,zh")
 cookie = config_basic.get("COOKIE", "zh-CN,zh")
-sec_ch_ua = config_basic.get("SEC_CH_UA", '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"')
+sec_ch_ua = config_basic.get(
+    "SEC_CH_UA", '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"'
+)
 sec_fetch_dest = config_basic.get("SEC_FETCH_DEST", "document")
 sec_fetch_mode = config_basic.get("SEC_FETCH_MODE", "cors")
-user_agent = config_basic.get("USER_AGENT", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
+user_agent = config_basic.get(
+    "USER_AGENT",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+)
 url = "https://springsunday.net/blackjack.php"
 headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "Accept-Encoding": "gzip, deflate",
-    "Accept-Language": language,                    
+    "Accept-Language": language,
     "Cookie": cookie,
-    #"Origin": "https://springsunday.net",
+    # "Origin": "https://springsunday.net",
     "Priority": "u=0, i",
     "Referer": "https://springsunday.net/blackjack.php",
     "Sec-Ch-Ua": sec_ch_ua,
@@ -31,6 +36,7 @@ headers = {
     "upgrade-insecure-requests": "1",
     "User-Agent": user_agent,
 }
+
 
 async def game(data):
     err = 0
@@ -92,7 +98,7 @@ async def do_game(amount=100, remain_point=18):
             return
     while s < remain_point:
         logger.info(f"当前点数{s}，继续抓牌")
-        await asyncio.sleep(random.randint(8, 20))
+        await asyncio.sleep(random.randint(1, 5))
         s_, e = await game(hit_data)
         if s_:
             s = s_
@@ -131,7 +137,7 @@ async def boom_game(boom_data, my_userid):
             return None
     while s < 21:
         logger.info(f"平局：当前点数{s}，继续抓牌")
-        await asyncio.sleep(random.randint(8, 20))
+        await asyncio.sleep(random.randint(1, 5))
         s_, e = await game(hit_data)
         if s_:
             s = s_

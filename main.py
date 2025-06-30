@@ -11,7 +11,6 @@ import aiomqtt
 from aiomqtt import MqttError, Message
 
 
-
 HELP_TOPIC = "blackjack/help"
 GAME_TOPIC = "blackjack/games"
 config = read("config/config.toml")
@@ -66,7 +65,7 @@ async def start_my_game(client: Client):
         if gift_bonus not in [100, 1000, 10000, 100000]:
             gift_bonus = 100
 
-        natural_remain_point = config["GAME"].get("natural_remain_point", 16)            
+        natural_remain_point = config["GAME"].get("natural_remain_point", 16)
         natural_bonus = config["GAME"].get("natural_bonus", 100)
         if natural_bonus not in [100, 1000, 10000, 100000]:
             natural_bonus = 100
@@ -83,7 +82,7 @@ async def start_my_game(client: Client):
             amount = gift_bonus
         elif g["natural_time"]:
             remain_point = natural_remain_point
-            amount = natural_bonus            
+            amount = natural_bonus
         point = await do_game(amount, remain_point)
         logger.info(f"开局{amount}魔力，点数{point}")
         if point and point > 21:
@@ -100,14 +99,18 @@ async def start_my_game(client: Client):
                     ),
                 )
 
+
 async def listen(client: Client):
+    sleep = config["GAME"].get("sleep", 60)
+    quick_sleep = int(sleep / 2)
+    delta = int(quick_sleep / 5)
     try:
         async for message in client.messages:
             if message.topic.matches(HELP_TOPIC):
                 await help(client, message)
             elif message.topic.matches(GAME_TOPIC) and MYID > 0:
-                if message.payload.decode()==str(MYID):
-                    sleeptime=random.randint(100,180)
+                if message.payload.decode() == str(MYID):
+                    sleeptime = random.randint(quick_sleep - delta, quick_sleep + delta)
                     logger.info(f"队友帮助平局完成，随机等待{sleeptime}秒后开始新对局")
                     await asyncio.sleep(sleeptime)
                     await start_my_game(client)
@@ -121,44 +124,48 @@ async def fetch_games(client: Client):
     sw_flag1 = False
     sw_flag2 = False
     time_ranges = [
-        ('00:01','00:35'),
-        ('08:00','11:00'),
-        ('12:00','15:00'),
-        ('16:00','18:00'),
-        ('19:30','21:30'),
-        ('22:30','23:50'),        
+        ("00:01", "00:35"),
+        ("08:00", "11:00"),
+        ("12:00", "15:00"),
+        ("16:00", "18:00"),
+        ("19:30", "21:30"),
+        ("22:30", "23:50"),
     ]
     auto_time = config["GAME"].get("auto_time", time_ranges)
     natural_mode_time = config["GAME"].get("natural_mode_time", [])
     sleep = config["GAME"].get("sleep", 60)
     while True:
-            
+
         g["auto_time"] = is_within_time_ranges(auto_time)
         g["natural_time"] = is_within_time_ranges(natural_mode_time)
         is_active = g["auto_time"] or g["natural_time"]
-      
-        if is_active:           
+
+        if is_active:
             if g["auto_time"] and not sw_flag1:
                 sw_flag1 = True
-                logger.info("当前时间段为挂机时间，启动！！！！！！！！！！！！！！！！！！！！！！！！！！！！")
+                logger.info(
+                    "当前时间段为挂机时间，启动！！！！！！！！！！！！！！！！！！！！！！！！！！！！"
+                )
 
             if g["natural_time"] and not sw_flag2:
                 sw_flag2 = True
-                logger.info("当前时间段为自然开局时间，启动！！！！！！！！！！！！！！！！！！！！！！！！！！！！")
+                logger.info(
+                    "当前时间段为自然开局时间，启动！！！！！！！！！！！！！！！！！！！！！！！！！！！！"
+                )
 
             try:
                 games, win_rate = await game_state(MYID)
                 g["win_rate"] = win_rate
 
-                #await client.publish(
+                # await client.publish(
                 #    GAME_TOPIC,
                 #    payload=json.dumps(games),
-                #)
+                # )
                 if MYID not in games:
                     await start_my_game(client)
                 delta = random.randint(-sleep // 10, sleep // 10)
                 await asyncio.sleep(sleep + delta)
-            
+
             except aiomqtt.exceptions.MqttCodeError as ee:
                 logger.error("MQTT异常，尝试重新连接: %s", ee, exc_info=True)
                 raise
@@ -166,14 +173,18 @@ async def fetch_games(client: Client):
             except Exception as e:
                 logger.error("任务执行失败：%s", e, exc_info=True)
                 await asyncio.sleep(5)
-        else:            
+        else:
             if sw_flag1 or sw_flag2:
                 sw_flag1 = False
                 sw_flag2 = False
-                logger.info("当前时间段为休息时间，关闭。。。。。。。。。。。。。。。。。。。。。。。。。。。。")
+                logger.info(
+                    "当前时间段为休息时间，关闭。。。。。。。。。。。。。。。。。。。。。。。。。。。。"
+                )
             await asyncio.sleep(10)
+
+
 def is_within_time_ranges(time_ranges):
-    now = datetime.now().time()    
+    now = datetime.now().time()
     for start_str, end_str in time_ranges:
         start = time_class.fromisoformat(start_str)
         end = time_class.fromisoformat(end_str)
