@@ -54,7 +54,7 @@ async def game(data):
                             try:
                                 point_str = text.split("=")[-1].strip()
                                 if point_str:
-                                    if point_str.startswith("21点"):
+                                    if point_str == "21或更多":
                                         logger.info("可能超过21点，按22点计算")
                                         point = 22
                                     else:
