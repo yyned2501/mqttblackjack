@@ -41,11 +41,11 @@ async def help(client: Client, message: Message):
                     "userid": userid,
                     "amount": data["amount"],
                 }
-                await boom_game(boom_data, MYID)
-                await client.publish(
-                    GAME_TOPIC,
-                    payload=json.dumps(userid),
-                )
+                if await boom_game(boom_data, MYID):
+                    await client.publish(
+                        GAME_TOPIC,
+                        payload=json.dumps(userid),
+                    )
         else:
             logger.debug("自己的消息，不平局")
 
