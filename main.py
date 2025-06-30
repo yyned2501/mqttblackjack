@@ -2,7 +2,7 @@ import time as time_module
 from datetime import time as time_class
 from datetime import datetime
 import traceback
-from libs.game import boom_game, do_game, game_state
+from libs.game import boom_game, start_game, game_state
 from libs.mqtt import Client
 from libs.log import logger
 from libs.toml import read
@@ -83,7 +83,7 @@ async def start_my_game(client: Client):
         elif g["natural_time"]:
             remain_point = natural_remain_point
             amount = natural_bonus
-        point = await do_game(amount, remain_point)
+        point = await start_game(amount, remain_point)
         logger.info(f"开局{amount}魔力，点数{point}")
         if point and point > 21:
             if not (g["natural_time"] or gift_model or boom):

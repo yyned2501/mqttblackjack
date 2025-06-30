@@ -54,7 +54,11 @@ async def game(data):
                             try:
                                 point_str = text.split("=")[-1].strip()
                                 if point_str:
-                                    point = int(point_str)
+                                    if point_str.startswith("21点"):
+                                        logger.info("可能超过21点，按22点计算")
+                                        point = 22
+                                    else:
+                                        point = int(point_str)
                                 else:
                                     raise
                             except:
@@ -80,7 +84,29 @@ async def game(data):
             err += 1
 
 
-async def do_game(amount=100, remain_point=18):
+async def deal_error(err_message: str, userid=0):
+    stop_data = {"game": "stop", "userid": userid}
+    if err_message == "该对局已结束":
+        logger.warning(f"{err_message}")
+        return None, None
+    elif err_message == "您必须先完成当前的游戏。":
+        logger.warning(f"上局未结束，无法获知对局对象，直接结束")
+        await game(stop_data)
+        return None, None
+    else:
+        logger.warning("平局：链接错误，稍后重试")
+        return None
+
+
+async def do_game(start_data: dict, remain_point=18, log_type="开局"):
+    s, e = await game(start_data)
+    while (s or e) or s < remain_point:
+        if not s:
+            s, e = deal_error(s, e)
+        logger.info(f"[{log_type}]当前点数{s}，继续抓牌")
+
+
+async def start_game(amount=100, remain_point=18):
     start_data = {
         "game": "hit",
         "start": "yes",
@@ -187,4 +213,4 @@ async def game_state(userid):
 
 
 if __name__ == "__main__":
-    asyncio.run(do_game())
+    asyncio.run(start_game())
