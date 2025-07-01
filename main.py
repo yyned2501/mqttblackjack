@@ -27,6 +27,7 @@ if MYID == 0:
     logger.error("未获取到用户id，不自动开局")
 lock = asyncio.Lock()
 g = {}
+friends = ("99872", "99785", "100727")
 
 
 async def help(client: Client, message: Message):
@@ -50,7 +51,10 @@ async def help(client: Client, message: Message):
             logger.debug("自己的消息，不平局")
 
 
-async def start_my_game(client: Client):
+async def start_my_game(client: Client, games: list[int] = []):
+    if len(set(games) & set(friends)) >= 2:
+        logger.info("已有两个队友挂机，取消开局")
+        return
     async with lock:
         # 读取下注点数，如果不是100, 1000, 10000, 100000，强制改成100
         amount = config["GAME"].get("bonus", 100)
@@ -113,7 +117,9 @@ async def listen(client: Client):
                     sleeptime = random.randint(quick_sleep - delta, quick_sleep + delta)
                     logger.info(f"队友帮助平局完成，随机等待{sleeptime}秒后开始新对局")
                     await asyncio.sleep(sleeptime)
-                    await start_my_game(client)
+                    games, win_rate = await game_state(MYID)
+                    g["win_rate"] = win_rate
+                    await start_my_game(client, games)
             else:
                 logger.warning(f"未知主题{message.topic}")
     except Exception as e:
@@ -156,13 +162,8 @@ async def fetch_games(client: Client):
             try:
                 games, win_rate = await game_state(MYID)
                 g["win_rate"] = win_rate
-
-                # await client.publish(
-                #    GAME_TOPIC,
-                #    payload=json.dumps(games),
-                # )
                 if MYID not in games:
-                    await start_my_game(client)
+                    await start_my_game(client, games)
                 delta = random.randint(-sleep // 10, sleep // 10)
                 await asyncio.sleep(sleep + delta)
 
@@ -194,6 +195,9 @@ def is_within_time_ranges(time_ranges):
 
 
 async def main():
+    if MYID not in friends:
+        logger.error("非授权用户，请联系YY")
+        return
     client = Client(
         HOST,
         username=MQTT_USER,
