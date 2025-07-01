@@ -128,7 +128,9 @@ async def game(data):
 async def do_game(data: dict, remain_point=18, log_type="开局"):
     point, forms = await game(data)
     if "继续旧游戏" in forms:
+        await asyncio.sleep(1)
         await do_game(forms["继续旧游戏"], 17, "未知")
+        await asyncio.sleep(2)
         return await do_game(data, remain_point, log_type)
     if not point:
         if forms:
@@ -137,6 +139,7 @@ async def do_game(data: dict, remain_point=18, log_type="开局"):
     while point < remain_point:
         logger.info(f"[{log_type}]当前点数{point}，继续抓牌")
         if "再抓一张" in forms:
+            await asyncio.sleep(random.randint(1, 5))
             point, forms = await game(forms["再抓一张"])
     logger.info(f"[{log_type}]当前点数{point}，结束")
     if "不再抓了，结束" in forms:
