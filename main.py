@@ -27,7 +27,7 @@ if MYID == 0:
     logger.error("未获取到用户id，不自动开局")
 lock = asyncio.Lock()
 g = {}
-friends = ("99872", "99785", "100727")
+friends = (99872, 99785, 100727)
 
 
 async def help(client: Client, message: Message):
