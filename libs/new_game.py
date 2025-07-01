@@ -38,6 +38,45 @@ headers = {
 }
 
 
+def extract_form_params(soup: BeautifulSoup) -> dict[str, dict[str, str]]:
+    """
+    Extract parameters from all forms, using submit button text as key.
+
+    Args:
+        soup (BeautifulSoup): Parsed HTML content
+
+    Returns:
+        Dict[str, Dict[str, str]]: Dictionary with submit button text as key
+        and form input name-value pairs as value
+    """
+    result = {}
+    forms = soup.find_all("form")
+
+    for form in forms:
+        # Get submit button text
+        submit_button = form.find("input", {"type": "submit"})
+        submit_text = (
+            submit_button.get("value", "").strip()
+            if submit_button
+            else "No Submit Button"
+        )
+
+        # Extract all input parameters
+        params = {}
+        inputs = form.find_all("input")
+        for input_tag in inputs:
+            name = input_tag.get("name")
+            value = input_tag.get("value")
+            if name and value:
+                params[name] = value
+
+        # Only add to result if there are parameters
+        if params:
+            result[submit_text] = params
+
+    return result
+
+
 async def game(data):
     err = 0
     while err < 3:
@@ -48,7 +87,9 @@ async def game(data):
                 async with session.post(url, headers=headers, data=data) as response:
                     if response.status == 200:
                         soup = BeautifulSoup(await response.text(), "lxml")
+                        forms = extract_form_params(soup)
                         element = soup.select_one("#details b")
+                        logger.debug(forms)
                         if element:
                             text = element.get_text(strip=True)
                             try:
@@ -64,16 +105,15 @@ async def game(data):
                             except:
                                 logger.error("未能获取到页面点数，返回22")
                                 point = 22
-                            return point, None
+                            return point, forms
                         else:
                             element = soup.select_one(
                                 "#outer table table td"
                             ) or soup.select_one("form strong")
                             if element:
                                 logger.warning(element.text.strip())
-                                return None, element.text.strip()
                             logger.error("未能获取到页面点数，返回None")
-                            return None, None
+                            return None, forms
                     else:
                         raise (response.status)
         except asyncio.TimeoutError as e:
@@ -82,28 +122,26 @@ async def game(data):
             logger.error(e, exc_info=True)
         finally:
             err += 1
+    return None, {}
 
 
-async def deal_error(err_message: str, userid=0):
-    stop_data = {"game": "stop", "userid": userid}
-    if err_message == "该对局已结束":
-        logger.warning(f"{err_message}")
-        return None, None
-    elif err_message == "您必须先完成当前的游戏。":
-        logger.warning(f"上局未结束，无法获知对局对象，直接结束")
-        await game(stop_data)
-        return None, None
-    else:
-        logger.warning("平局：链接错误，稍后重试")
+async def do_game(data: dict, remain_point=18, log_type="开局"):
+    point, forms = await game(data)
+    if "继续旧游戏" in forms:
+        await do_game(forms["继续旧游戏"], 17, "未知")
+        return await do_game(data, remain_point, log_type)
+    if not point:
+        if forms:
+            logger.error(f"未知页面{forms}")
         return None
-
-
-async def do_game(start_data: dict, remain_point=18, log_type="开局"):
-    s, e = await game(start_data)
-    while (s or e) or s < remain_point:
-        if not s:
-            s, e = deal_error(s, e)
-        logger.info(f"[{log_type}]当前点数{s}，继续抓牌")
+    while point < remain_point:
+        logger.info(f"[{log_type}]当前点数{point}，继续抓牌")
+        if "再抓一张" in forms:
+            point, forms = await game(forms["再抓一张"])
+    logger.info(f"[{log_type}]当前点数{point}，结束")
+    if "不再抓了，结束" in forms:
+        point, forms = await game(forms["不再抓了，结束"])
+    return point
 
 
 async def start_game(amount=100, remain_point=18):
@@ -112,74 +150,11 @@ async def start_game(amount=100, remain_point=18):
         "start": "yes",
         "amount": amount,
     }
-    continue_data = {"game": "hit", "continue": "yes"}
-    hit_data = {"game": "hit", "userid": 0}
-    stop_data = {"game": "stop", "userid": 0}
-    s, e = await game(start_data)
-    while not s:
-        if e == "您必须先完成当前的游戏。":
-            s, e = await game(continue_data)
-            await asyncio.sleep(5)
-        else:
-            return
-    while s < remain_point:
-        logger.info(f"当前点数{s}，继续抓牌")
-        await asyncio.sleep(random.randint(1, 5))
-        s_, e = await game(hit_data)
-        if s_:
-            s = s_
-        else:
-            if e == "Starship":
-                logger.warning("当前点数{s}，对局已结束")
-                return s
-            else:
-                logger.error("当前点数{s}，访问错误，等待重试")
-                return None
-    if s == 21:
-        logger.info(f"当前点数{s}，完美")
-    elif s < 21:
-        logger.info(f"当前点数{s}，停止抓牌")
-        s, e = await game(stop_data)
-    else:
-        logger.info(f"当前点数{s}，爆了")
-    return s
+    return await do_game(start_data, remain_point, "开局")
 
 
-async def boom_game(boom_data, my_userid):
-    start_data = boom_data
-    hit_data = {"game": "hit", "userid": my_userid}
-    stop_data = {"game": "stop", "userid": my_userid}
-    s, e = await game(start_data)
-    while not s:
-        if e == "该对局已结束":
-            logger.warning(f"平局：对局被人抢了")
-            return None
-        elif e == "您必须先完成当前的游戏。":
-            logger.warning(f"平局：上局未结束，无法获知对局对象，直接结束")
-            await game(stop_data)
-            return None
-        else:
-            logger.warning("平局：链接错误，稍后重试")
-            return None
-    while s < 21:
-        logger.info(f"平局：当前点数{s}，继续抓牌")
-        await asyncio.sleep(random.randint(1, 5))
-        s_, e = await game(hit_data)
-        if s_:
-            s = s_
-        else:
-            if e == "Starship":
-                logger.warning("平局：对局已结束")
-                return None
-            logger.error("平局：获取对局数据失败，直接结束")
-            await game(stop_data)
-            return None
-    if s == 21:
-        logger.info(f"平局：当前点数{s}，平局失败")
-        return s
-    else:
-        logger.info(f"平局：当前点数{s}，平局成功")
-        return s
+async def boom_game(boom_data):
+    return await do_game(boom_data, 21, "平局")
 
 
 async def game_state(userid):
@@ -213,4 +188,4 @@ async def game_state(userid):
 
 
 if __name__ == "__main__":
-    asyncio.run(start_game())
+    asyncio.run(start_game(1000, 17))

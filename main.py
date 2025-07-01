@@ -1,15 +1,18 @@
+# 标准库
 import time as time_module
 from datetime import time as time_class
 from datetime import datetime
-import traceback
-from libs.game import boom_game, start_game, game_state
-from libs.mqtt import Client
-from libs.log import logger
-from libs.toml import read
 import json, asyncio, random
+
+# 第三方库
 import aiomqtt
 from aiomqtt import MqttError, Message
 
+# 自定义
+from libs.new_game import boom_game, start_game, game_state
+from libs.mqtt import Client
+from libs.log import logger
+from libs.toml import read
 
 HELP_TOPIC = "blackjack/help"
 GAME_TOPIC = "blackjack/games"
@@ -42,7 +45,7 @@ async def help(client: Client, message: Message):
                     "userid": userid,
                     "amount": data["amount"],
                 }
-                if await boom_game(boom_data, MYID):
+                if await boom_game(boom_data):
                     await client.publish(
                         GAME_TOPIC,
                         payload=json.dumps(userid),
@@ -106,24 +109,26 @@ async def start_my_game(client: Client, games: list[int] = []):
 
 async def listen(client: Client):
     sleep = config["GAME"].get("sleep", 60)
-    quick_sleep = int(sleep / 2)
-    delta = int(quick_sleep / 5)
-    try:
-        async for message in client.messages:
-            if message.topic.matches(HELP_TOPIC):
-                await help(client, message)
-            elif message.topic.matches(GAME_TOPIC) and MYID > 0:
-                if message.payload.decode() == str(MYID):
-                    sleeptime = random.randint(quick_sleep - delta, quick_sleep + delta)
-                    logger.info(f"队友帮助平局完成，随机等待{sleeptime}秒后开始新对局")
-                    await asyncio.sleep(sleeptime)
-                    games, win_rate = await game_state(MYID)
-                    g["win_rate"] = win_rate
-                    await start_my_game(client, games)
-            else:
-                logger.warning(f"未知主题{message.topic}")
-    except Exception as e:
-        print(f"处理消息时发生错误: {e}")
+    quick_sleep = int(sleep / 3)
+    while True:
+        try:
+            async for message in client.messages:
+                if message.topic.matches(HELP_TOPIC):
+                    await help(client, message)
+                elif message.topic.matches(GAME_TOPIC) and MYID > 0:
+                    if message.payload.decode() == str(MYID):
+                        sleeptime = random.randint(quick_sleep, quick_sleep * 2)
+                        logger.info(
+                            f"队友帮助平局完成，随机等待{sleeptime}秒后开始新对局"
+                        )
+                        await asyncio.sleep(sleeptime)
+                        games, win_rate = await game_state(MYID)
+                        g["win_rate"] = win_rate
+                        await start_my_game(client, games)
+                else:
+                    logger.warning(f"未知主题{message.topic}")
+        except Exception as e:
+            logger.error(f"处理消息时发生错误: {e}", exc_info=True)
 
 
 async def fetch_games(client: Client):
@@ -141,7 +146,6 @@ async def fetch_games(client: Client):
     natural_mode_time = config["GAME"].get("natural_mode_time", [])
     sleep = config["GAME"].get("sleep", 60)
     while True:
-
         g["auto_time"] = is_within_time_ranges(auto_time)
         g["natural_time"] = is_within_time_ranges(natural_mode_time)
         is_active = g["auto_time"] or g["natural_time"]
