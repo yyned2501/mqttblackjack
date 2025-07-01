@@ -38,18 +38,18 @@ async def help(client: Client, message: Message):
         data = json.loads(message.payload)
         userid = data["userid"]
         if not (userid == MYID):
-            if data.get("point", 0) > 21:
-                boom_data = {
-                    "game": "hit",
-                    "start": "yes",
-                    "userid": userid,
-                    "amount": data["amount"],
-                }
-                if await boom_game(boom_data):
-                    await client.publish(
-                        GAME_TOPIC,
-                        payload=json.dumps(userid),
-                    )
+            boom_data = {
+                "game": "hit",
+                "start": "yes",
+                "userid": userid,
+                "amount": data["amount"],
+            }
+            logger.info(f"队友[{userid}]需要帮助，开始帮助队友平局")
+            if await boom_game(boom_data):
+                await client.publish(
+                    GAME_TOPIC,
+                    payload=json.dumps(userid),
+                )
         else:
             logger.debug("自己的消息，不平局")
 
