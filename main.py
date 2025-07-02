@@ -212,7 +212,7 @@ async def _play_game():
             logger.info(f"对局数据:{data}")
             if not await do_game(data, 17, "对局"):
                 return
-        asyncio.sleep(random.randint(1, 5))
+        await asyncio.sleep(random.randint(1, 5))
 
 
 async def play_game():
