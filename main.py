@@ -210,7 +210,8 @@ async def _play_game():
                 return
             data = random.choice(game_list)
             logger.info(f"对局数据:{data}")
-            if not await do_game(data, 17, "对局"):
+            point = 21 if data["amount"] == "100.0" else 17
+            if not await do_game(data, point, "对局"):
                 return
         await asyncio.sleep(random.randint(1, 5))
 
