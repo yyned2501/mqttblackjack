@@ -9,7 +9,7 @@ import aiomqtt
 from aiomqtt import MqttError, Message
 
 # 自定义
-from libs.new_game import boom_game, start_game, game_state
+from libs.game import do_game, game_state
 from libs.mqtt import Client
 from libs.log import logger
 from libs.toml import read
@@ -21,16 +21,36 @@ MYID = config["BASIC"].get(
     "MYID",
     config["GAME"].get("MYID", 0),
 )
-
 HOST = config["BASIC"]["HOST"]
 MQTT_USER = config["BASIC"]["MQTT_USER"]
 MQTT_PASSWORD = config["BASIC"]["MQTT_PASSWORD"]
 
 if MYID == 0:
     logger.error("未获取到用户id，不自动开局")
+
 lock = asyncio.Lock()
 g = {}
 friends = (99872, 99785, 100727)
+bonus = config["GAME"].get("bonus", 100)
+if bonus not in [100, 1000, 10000, 100000]:
+    logger.warning("挂机魔力设置不在列表内，自动设置为100")
+    bonus = 100
+# 读取保留点数，默认值18
+remain_point = config["GAME"].get("remain_point", 18)
+# 读取自助模式，默认值false
+gift_model = config["GAME"].get("gift_model", False)
+gift_remain_point = config["GAME"].get("gift_remain_point", 20)
+gift_bonus = config["GAME"].get("gift_bonus", 100)
+if gift_bonus not in [100, 1000, 10000, 100000]:
+    logger.warning("自助魔力设置不在列表内，自动设置为100")
+    gift_bonus = 100
+natural_remain_point = config["GAME"].get("natural_remain_point", 16)
+natural_bonus = config["GAME"].get("natural_bonus", 100)
+if natural_bonus not in [100, 1000, 10000, 100000]:
+    logger.warning("自然魔力设置不在列表内，自动设置为100")
+    natural_bonus = 100
+boom_rate = config["GAME"].get("boom_rate", 0)
+win_rate = config["GAME"].get("win_rate", 0.58)
 
 
 async def help(client: Client, message: Message):
@@ -45,7 +65,7 @@ async def help(client: Client, message: Message):
                 "amount": data["amount"],
             }
             logger.info(f"队友[{userid}]需要帮助，开始帮助队友平局")
-            if await boom_game(boom_data):
+            if await do_game(boom_data, 21, "平局"):
                 await client.publish(
                     GAME_TOPIC,
                     payload=json.dumps(userid),
@@ -59,39 +79,28 @@ async def start_my_game(client: Client, games: list[int] = []):
         logger.info("已有两个队友挂机，取消开局")
         return
     async with lock:
-        # 读取下注点数，如果不是100, 1000, 10000, 100000，强制改成100
-        amount = config["GAME"].get("bonus", 100)
-        if amount not in [100, 1000, 10000, 100000]:
-            amount = 100
-        # 读取保留点数，默认值18
-        remain_point = config["GAME"].get("remain_point", 18)
-        # 读取自助模式，默认值false
-        gift_model = config["GAME"].get("gift_model", False)
-        gift_remain_point = config["GAME"].get("gift_remain_point", 20)
-        gift_bonus = config["GAME"].get("gift_bonus", 100)
-        if gift_bonus not in [100, 1000, 10000, 100000]:
-            gift_bonus = 100
-
-        natural_remain_point = config["GAME"].get("natural_remain_point", 16)
-        natural_bonus = config["GAME"].get("natural_bonus", 100)
-        if natural_bonus not in [100, 1000, 10000, 100000]:
-            natural_bonus = 100
-
+        # 设置挂机数为默认值
+        run_gift_model = gift_model
+        run_amount = bonus
+        run_remain_point = remain_point
         # 计算本局是否自助
-        boom_rate = config["GAME"].get("boom_rate", 0)
         boom = random.random() < boom_rate
-        win_rate = config["GAME"].get("win_rate", 0.58)
         if g["win_rate"] > win_rate:
             logger.info(f"当前胜率{g["win_rate"]}超过{win_rate},自动开启自助")
-            gift_model = True
-        if gift_model:
-            remain_point = gift_remain_point
-            amount = gift_bonus
-        elif g["natural_time"]:
-            remain_point = natural_remain_point
-            amount = natural_bonus
-        point = await start_game(amount, remain_point)
-        logger.info(f"开局{amount}魔力，点数{point}")
+            run_gift_model = True
+        if run_gift_model:
+            run_remain_point = gift_remain_point
+            run_amount = gift_bonus
+        elif g["natural_time"]:  # 是否自然下注时间
+            run_remain_point = natural_remain_point
+            run_amount = natural_bonus
+        start_data = {
+            "game": "hit",
+            "start": "yes",
+            "amount": run_amount,
+        }
+        point = await do_game(start_data, run_remain_point, "开局")
+        logger.info(f"开局{run_amount}魔力，点数{point}")
         if point and point > 21:
             if not (g["natural_time"] or gift_model or boom):
                 logger.info(f"寻求队友平局")
@@ -100,7 +109,7 @@ async def start_my_game(client: Client, games: list[int] = []):
                     payload=json.dumps(
                         {
                             "userid": MYID,
-                            "amount": amount,
+                            "amount": run_amount,
                             "point": point,
                         }
                     ),

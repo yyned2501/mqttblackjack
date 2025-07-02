@@ -147,19 +147,6 @@ async def do_game(data: dict, remain_point=18, log_type="开局"):
     return point
 
 
-async def start_game(amount=100, remain_point=18):
-    start_data = {
-        "game": "hit",
-        "start": "yes",
-        "amount": amount,
-    }
-    return await do_game(start_data, remain_point, "开局")
-
-
-async def boom_game(boom_data):
-    return await do_game(boom_data, 21, "平局")
-
-
 async def game_state(userid):
     error = 0
     state = []
@@ -188,7 +175,3 @@ async def game_state(userid):
                 logger.error(e, exc_info=True)
                 error += 1
                 logger.error(f"请求错误{error}次")
-
-
-if __name__ == "__main__":
-    asyncio.run(start_game(1000, 17))
