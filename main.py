@@ -152,8 +152,12 @@ async def listen(client: Client):
                         await start_my_game(client, games)
                 else:
                     logger.warning(f"未知主题{message.topic}")
+        except aiomqtt.exceptions.MqttCodeError as ee:
+            logger.error("MQTT异常，尝试重新连接: %s", ee, exc_info=True)
+            raise
         except Exception as e:
             logger.error(f"处理消息时发生错误: {e}", exc_info=True)
+            await asyncio.sleep(10)
 
 
 async def start_game(client: Client):
