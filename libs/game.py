@@ -89,14 +89,14 @@ async def game(data):
                         soup = BeautifulSoup(await response.text(), "lxml")
                         forms = extract_form_params(soup)
                         element = soup.select_one("#details b")
-                        logger.debug(forms)
-                        if "返回21点" in forms:
-                            form = soup.find("form")
+                        form = soup.find("form")
+                        if form:
                             parent_td = form.find_parent("td")
                             text_before_form = "".join(
                                 parent_td.find_all(text=True, recursive=False)
                             ).strip()
-                            logger.info(text_before_form)
+                            if text_before_form:
+                                logger.info(text_before_form)
                         if element:
                             text = element.get_text(strip=True)
                             try:
