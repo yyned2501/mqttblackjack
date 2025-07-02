@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 import random
 from bs4 import BeautifulSoup
-from libs.log import logger
+from libs.log import logger, play_logger
 from libs.toml import read
 
 config_basic = read("config/config.toml")["BASIC"]
@@ -96,7 +96,7 @@ async def game(data):
                                 parent_td.find_all(text=True, recursive=False)
                             ).strip()
                             if text_before_form:
-                                logger.info(text_before_form)
+                                play_logger.info(text_before_form)
                         if element:
                             text = element.get_text(strip=True)
                             try:
