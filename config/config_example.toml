@@ -1,6 +1,6 @@
 [BASIC]
 LANGUAGE = ""
-COOKIE  = ""
+COOKIE = ""
 SEC_CH_UA = ''
 SEC_FETCH_DEST = ""
 SEC_FETCH_MODE = ""
@@ -17,9 +17,12 @@ sleep = 60
 git_model = false
 gift_remain_point = 20
 gift_bonus = 100
-natural_remain_point = 16        
+natural_remain_point = 16
 natural_bonus = 100
 boom_rate = 0
 win_rate = 0.58
 natural_mode_time = []
 auto_time = []
+auto_play = false
+play_point = 10000
+play_sleep = 60

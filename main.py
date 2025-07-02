@@ -9,13 +9,22 @@ import aiomqtt
 from aiomqtt import MqttError, Message
 
 # 自定义
-from libs.game import do_game, game_state
+from libs.game import do_game, game_state, get_gamelist
 from libs.mqtt import Client
 from libs.log import logger
 from libs.toml import read
 
 HELP_TOPIC = "blackjack/help"
 GAME_TOPIC = "blackjack/games"
+time_ranges = [
+    ("00:01", "00:35"),
+    ("08:00", "11:00"),
+    ("12:00", "15:00"),
+    ("16:00", "18:00"),
+    ("19:30", "21:30"),
+    ("22:30", "23:50"),
+]
+
 config = read("config/config.toml")
 MYID = config["BASIC"].get(
     "MYID",
@@ -51,6 +60,13 @@ if natural_bonus not in [100, 1000, 10000, 100000]:
     natural_bonus = 100
 boom_rate = config["GAME"].get("boom_rate", 0)
 win_rate = config["GAME"].get("win_rate", 0.58)
+auto_time = config["GAME"].get("auto_time", time_ranges)
+natural_mode_time = config["GAME"].get("natural_mode_time", [])
+sleep = config["GAME"].get("sleep", 60)
+auto_play = config["GAME"].get("auto_play", False)
+play_point = config["GAME"].get("play_point", 100)
+play_sleep = config["GAME"].get("play_sleep", 60)
+play_time = auto_time + natural_mode_time
 
 
 async def help(client: Client, message: Message):
@@ -140,20 +156,9 @@ async def listen(client: Client):
             logger.error(f"处理消息时发生错误: {e}", exc_info=True)
 
 
-async def fetch_games(client: Client):
+async def start_game(client: Client):
     sw_flag1 = False
     sw_flag2 = False
-    time_ranges = [
-        ("00:01", "00:35"),
-        ("08:00", "11:00"),
-        ("12:00", "15:00"),
-        ("16:00", "18:00"),
-        ("19:30", "21:30"),
-        ("22:30", "23:50"),
-    ]
-    auto_time = config["GAME"].get("auto_time", time_ranges)
-    natural_mode_time = config["GAME"].get("natural_mode_time", [])
-    sleep = config["GAME"].get("sleep", 60)
     while True:
         g["auto_time"] = is_within_time_ranges(auto_time)
         g["natural_time"] = is_within_time_ranges(natural_mode_time)
@@ -197,6 +202,33 @@ async def fetch_games(client: Client):
             await asyncio.sleep(10)
 
 
+async def _play_game():
+    while True:
+        async with lock:
+            game_list = await get_gamelist(friends, play_point)
+            if not game_list:
+                return
+            data = random.choice(game_list)
+            logger.info(f"对局数据:{data}")
+            if not await do_game(data, 17, "对局"):
+                return
+        asyncio.sleep(random.randint(1, 5))
+
+
+async def play_game():
+    while auto_play:
+        g["play_time"] = is_within_time_ranges(play_time)
+        if g["play_time"]:
+            try:
+                await _play_game()
+                delta = random.randint(-play_sleep // 10, play_sleep // 10)
+                await asyncio.sleep(play_sleep + delta)
+            except Exception as e:
+                logger.error(f"自动对局发生错误: {e}", exc_info=True)
+        else:
+            await asyncio.sleep(10)
+
+
 def is_within_time_ranges(time_ranges):
     now = datetime.now().time()
     for start_str, end_str in time_ranges:
@@ -223,7 +255,7 @@ async def main():
             async with client:
                 await client.subscribe(HELP_TOPIC)
                 await client.subscribe(GAME_TOPIC)
-                await asyncio.gather(listen(client), fetch_games(client))
+                await asyncio.gather(listen(client), start_game(client), play_game())
         except MqttError:
             logger.error(f"Connection lost; Reconnecting in {interval} seconds ...")
             await asyncio.sleep(interval)

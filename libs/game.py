@@ -175,3 +175,50 @@ async def game_state(userid):
                 logger.error(e, exc_info=True)
                 error += 1
                 logger.error(f"请求错误{error}次")
+
+
+def games_list_form_params(
+    soup: BeautifulSoup, no_bet_list: list, max_amount: int
+) -> dict[str, dict[str, str]]:
+    result = []
+    forms = soup.find_all("form")
+
+    for form in forms:
+        # Extract all input parameters
+        params = {}
+        inputs = form.find_all("input")
+        for input_tag in inputs:
+            name = input_tag.get("name")
+            value = input_tag.get("value")
+            if name and value:
+                params[name] = value
+
+        # Only add to result if there are parameters
+        if (
+            params
+            and "userid" in params
+            and int(params["userid"]) not in no_bet_list
+            and int(params["amount"].split(".")[0]) <= max_amount
+        ):
+            result.append(params)
+
+    return result
+
+
+async def get_gamelist(no_bet_list, max_point):
+    error = 0
+    while error < 3:
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url, headers=headers) as response:
+                    if response.status == 200:
+                        soup = BeautifulSoup(await response.text(), "lxml")
+                        game_list = games_list_form_params(soup, no_bet_list, max_point)
+                        return game_list
+                    else:
+                        logger.error(response.status)
+                        raise (response.status)
+            except Exception as e:
+                logger.error(e, exc_info=True)
+                error += 1
+                logger.error(f"请求错误{error}次")
