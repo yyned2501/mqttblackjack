@@ -89,14 +89,6 @@ async def game(data):
                         soup = BeautifulSoup(await response.text(), "lxml")
                         forms = extract_form_params(soup)
                         element = soup.select_one("#details b")
-                        form = soup.find("form")
-                        if form:
-                            parent_td = form.find_parent("td")
-                            text_before_form = "".join(
-                                parent_td.find_all(text=True, recursive=False)
-                            ).strip()
-                            if text_before_form:
-                                play_logger.info(text_before_form)
                         if element:
                             text = element.get_text(strip=True)
                             try:
@@ -109,6 +101,16 @@ async def game(data):
                                         point = int(point_str)
                                 else:
                                     raise
+                                form = soup.find("form")
+                                if form:
+                                    parent_td = form.find_parent("td")
+                                    text_before_form = "".join(
+                                        parent_td.find_all(text=True, recursive=False)
+                                    ).strip()
+                                    if text_before_form:
+                                        play_logger.info(
+                                            f"你有{point}点，{text_before_form}"
+                                        )
                             except:
                                 logger.error("未能获取到页面点数，返回22")
                                 point = 22
