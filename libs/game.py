@@ -181,8 +181,8 @@ async def game_state(userid):
                         logger.error(response.status)
                         raise (response.status)
             except Exception as e:
-                logger.error(e, exc_info=True)
                 error += 1
+                logger.error(e, exc_info=(error == 3))
                 logger.error(f"请求错误{error}次")
 
 
