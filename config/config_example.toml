@@ -27,3 +27,4 @@ auto_play = false
 play_point = 10000
 play_sleep = 60
 play_set = [[100, 19], [1000, 18], [10000, 17]]
+max_help_bonus = 10000
