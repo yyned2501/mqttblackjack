@@ -126,9 +126,9 @@ async def game(data):
                     else:
                         raise (response.status)
         except asyncio.TimeoutError as e:
-            logger.error(e, exc_info=True)
+            logger.error(f"请求超时{err}次：{e}", exc_info=(err == 3))
         except Exception as e:
-            logger.error(e, exc_info=True)
+            logger.error(f"请求未知错误{err}次：{e}", exc_info=(err == 3))
         finally:
             err += 1
     return None, {}
@@ -182,8 +182,7 @@ async def game_state(userid):
                         raise (response.status)
             except Exception as e:
                 error += 1
-                logger.error(e, exc_info=(error == 3))
-                logger.error(f"请求错误{error}次")
+                logger.error(f"请求错误{error}次：{e}", exc_info=(error == 3))
 
 
 def games_list_form_params(
