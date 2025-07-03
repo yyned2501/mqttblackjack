@@ -67,12 +67,23 @@ auto_play = config["GAME"].get("auto_play", False)
 play_point = config["GAME"].get("play_point", 100)
 play_sleep = config["GAME"].get("play_sleep", 60)
 play_time = auto_time + natural_mode_time
+max_help_bonus = config["GAME"].get("max_help_bonus", 10000)
+try:
+    play_set = {
+        f"{one_set[0]:.1f}": one_set[1]
+        for one_set in config["GAME"].get("play_set", [])
+    }
+except:
+    play_set = {}
 
 
 async def help(client: Client, message: Message):
     async with lock:
         data = json.loads(message.payload)
         userid = data["userid"]
+        if data["amount"] > max_help_bonus:
+            logger.warning(f"队友{userid}需要帮助，但所需魔力大于挂机魔力，自动取消")
+            return
         if not (userid == MYID):
             boom_data = {
                 "game": "hit",
@@ -152,8 +163,12 @@ async def listen(client: Client):
                         await start_my_game(client, games)
                 else:
                     logger.warning(f"未知主题{message.topic}")
+        except MqttError as ee:
+            logger.error("MQTT异常，尝试重新连接: %s", ee, exc_info=True)
+            raise
         except Exception as e:
             logger.error(f"处理消息时发生错误: {e}", exc_info=True)
+            await asyncio.sleep(10)
 
 
 async def start_game(client: Client):
@@ -184,7 +199,9 @@ async def start_game(client: Client):
                     await start_my_game(client, games)
                 delta = random.randint(-sleep // 10, sleep // 10)
                 await asyncio.sleep(sleep + delta)
-
+            except MqttError as ee:
+                logger.error("MQTT异常，尝试重新连接: %s", ee, exc_info=True)
+                raise
             except aiomqtt.exceptions.MqttCodeError as ee:
                 logger.error("MQTT异常，尝试重新连接: %s", ee, exc_info=True)
                 raise
@@ -205,14 +222,14 @@ async def start_game(client: Client):
 async def _play_game():
     while True:
         async with lock:
-            game_list = await get_gamelist(friends, play_point)
+            game_list = await get_gamelist(friends, play_set)
             if not game_list:
                 return
             data = random.choice(game_list)
-            logger.info(f"对局数据:{data}")
-            point = 21 if data["amount"] == "100.0" else 17
-            if not await do_game(data, point, "对局"):
-                return
+            point = play_set.get(data.get("amount", 0), None)
+            if point:
+                if not await do_game(data, point, "对局"):
+                    return
         await asyncio.sleep(random.randint(1, 5))
 
 

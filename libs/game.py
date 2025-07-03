@@ -187,7 +187,7 @@ async def game_state(userid):
 
 
 def games_list_form_params(
-    soup: BeautifulSoup, no_bet_list: list, max_amount: int
+    soup: BeautifulSoup, no_bet_list: list, play_set: dict[str, int]
 ) -> dict[str, dict[str, str]]:
     result = []
     forms = soup.find_all("form")
@@ -207,14 +207,14 @@ def games_list_form_params(
             params
             and "userid" in params
             and int(params["userid"]) not in no_bet_list
-            and int(params["amount"].split(".")[0]) <= max_amount
+            and params["amount"] in play_set
         ):
             result.append(params)
 
     return result
 
 
-async def get_gamelist(no_bet_list, max_point):
+async def get_gamelist(no_bet_list, play_set):
     error = 0
     while error < 3:
         async with aiohttp.ClientSession() as session:
@@ -222,7 +222,7 @@ async def get_gamelist(no_bet_list, max_point):
                 async with session.get(url, headers=headers) as response:
                     if response.status == 200:
                         soup = BeautifulSoup(await response.text(), "lxml")
-                        game_list = games_list_form_params(soup, no_bet_list, max_point)
+                        game_list = games_list_form_params(soup, no_bet_list, play_set)
                         return game_list
                     else:
                         logger.error(response.status)
