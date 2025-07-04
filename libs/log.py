@@ -17,7 +17,7 @@ play_log_file = "logs/play.log"
 play_logger.setLevel(logging.INFO)
 file_handler = RotatingFileHandler(
     play_log_file,
-    maxBytes=10 * 1024 * 1024,
+    # maxBytes=10 * 1024 * 1024,
     encoding="utf-8",
     when="midnight",  # 按天分割（午夜时分）
     interval=1,  # 每1天轮换一次
