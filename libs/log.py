@@ -1,5 +1,5 @@
 import logging
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 
 formatter = logging.Formatter(
     "[%(levelname)s] %(asctime)s - %(filename)s:%(lineno)d - %(message)s"
@@ -15,9 +15,8 @@ logger.addHandler(console_handler)
 play_logger = logging.getLogger("play")
 play_log_file = "logs/play.log"
 play_logger.setLevel(logging.INFO)
-file_handler = RotatingFileHandler(
+file_handler = TimedRotatingFileHandler(
     play_log_file,
-    # maxBytes=10 * 1024 * 1024,
     encoding="utf-8",
     when="midnight",  # 按天分割（午夜时分）
     interval=1,  # 每1天轮换一次
