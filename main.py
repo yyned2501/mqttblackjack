@@ -68,6 +68,7 @@ play_point = config["GAME"].get("play_point", 100)
 play_sleep = config["GAME"].get("play_sleep", 60)
 play_time = auto_time + natural_mode_time
 max_help_bonus = config["GAME"].get("max_help_bonus", 10000)
+friends_count = config["GAME"].get("friends_count", 2)
 try:
     play_set = {
         f"{one_set[0]:.1f}": one_set[1]
@@ -102,8 +103,8 @@ async def help(client: Client, message: Message):
 
 
 async def start_my_game(client: Client, games: list[int] = []):
-    if len(set(games) & set(friends)) >= 2:
-        logger.info("已有两个队友挂机，取消开局")
+    if len(set(games) & set(friends)) >= friends_count:
+        logger.info(f"已有{friends_count}个队友挂机，取消开局")
         return
     async with lock:
         # 设置挂机数为默认值
