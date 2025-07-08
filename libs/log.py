@@ -25,6 +25,3 @@ file_handler = TimedRotatingFileHandler(
 file_handler.setFormatter(formatter)
 play_logger.addHandler(file_handler)
 play_logger.addHandler(console_handler)
-
-for _ in range(100000):
-    logger.info("测试日志" * 100)
