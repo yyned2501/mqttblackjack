@@ -16,6 +16,7 @@ from libs.toml import read
 
 HELP_TOPIC = "blackjack/help"
 GAME_TOPIC = "blackjack/games"
+STATE_TOPIC = "blackjack/states"
 time_ranges = [
     ("00:01", "00:35"),
     ("08:00", "11:00"),
