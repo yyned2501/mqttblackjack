@@ -10,6 +10,15 @@ MYID = 111
 MQTT_USER = ""
 MQTT_PASSWORD = ""
 
+
+[BOT]
+chat_id = 12345
+BOT_TOKEN = "botapi"
+proxy_set = "on"
+proxy_info = "socks5://127.0.0.1:1000"
+
+
+
 [GAME]
 bonus = 100
 remain_point = 18
