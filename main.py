@@ -70,6 +70,7 @@ play_sleep = config["GAME"].get("play_sleep", 60)
 play_time = auto_time + natural_mode_time
 max_help_bonus = config["GAME"].get("max_help_bonus", 10000)
 friends_count = config["GAME"].get("friends_count", 2)
+play_blacklist = list(set(friends) | set(config["GAME"].get("play_blacklist", [])))
 try:
     play_set = {
         f"{one_set[0]:.1f}": one_set[1]
@@ -224,7 +225,7 @@ async def start_game(client: Client):
 async def _play_game():
     while True:
         async with lock:
-            game_list = await get_gamelist(friends, play_set)
+            game_list = await get_gamelist(play_blacklist, play_set)
             if not game_list:
                 return
             data = random.choice(game_list)
