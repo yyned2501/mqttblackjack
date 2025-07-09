@@ -1,15 +1,14 @@
 # 标准库
 import os
-import uuid
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from datetime import datetime
-
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
 # 第三方库
 import imgkit
+from bs4 import BeautifulSoup
+
 
 
 

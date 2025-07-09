@@ -1,11 +1,16 @@
+# 标准库
 import asyncio
-import aiohttp
 import random
+
+# 第三方库
+import aiohttp
 from bs4 import BeautifulSoup
+
+# 自定义模块
 from libs.log import logger, play_logger
 from libs.toml import read
-
 from libs.image import fix_image_links, save_html_as_image
+
 
 config_basic = read("config/config.toml")["BASIC"]
 language = config_basic.get("LANGUAGE", "zh-CN,zh")
