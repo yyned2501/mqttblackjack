@@ -5,6 +5,8 @@ from bs4 import BeautifulSoup
 from libs.log import logger, play_logger
 from libs.toml import read
 
+from libs.image import fix_image_links, save_html_as_image
+
 config_basic = read("config/config.toml")["BASIC"]
 language = config_basic.get("LANGUAGE", "zh-CN,zh")
 cookie = config_basic.get("COOKIE", "zh-CN,zh")
@@ -86,7 +88,8 @@ async def game(data):
             ) as session:
                 async with session.post(url, headers=headers, data=data) as response:
                     if response.status == 200:
-                        soup = BeautifulSoup(await response.text(), "lxml")
+                        html = await response.text()
+                        soup = BeautifulSoup(html, "lxml") 
                         forms = extract_form_params(soup)
                         element = soup.select_one("#details b")
                         if element:
@@ -108,9 +111,18 @@ async def game(data):
                                         parent_td.find_all(text=True, recursive=False)
                                     ).strip()
                                     if text_before_form:
+                                        filename_prefix = "Player"
+                                        fixed_html = fix_image_links(html, str(response.url))
+                                        await save_html_as_image(fixed_html, filename_prefix)
+                                                                               
                                         play_logger.info(
                                             f"你有{point}点，{text_before_form}"
                                         )
+                                else:
+                                    filename_prefix = "Banker"
+                                    fixed_html = fix_image_links(html, str(response.url))
+                                    await save_html_as_image(fixed_html, filename_prefix)
+
                             except:
                                 logger.error("未能获取到页面点数，返回22")
                                 point = 22
