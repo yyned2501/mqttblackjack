@@ -1,10 +1,14 @@
 # 标准库
 import asyncio
 import random
+from pathlib import Path
 
 # 第三方库
 import aiohttp
 from bs4 import BeautifulSoup
+from telegram import Update
+from telegram.ext import  MessageHandler, ApplicationBuilder, CommandHandler
+from telegram.ext import ContextTypes
 
 # 自定义模块
 from libs.log import logger, play_logger
@@ -15,6 +19,10 @@ from libs.image import fix_image_links, save_html_as_image
 
 config = read("config/config.toml")
 chat_id = config["BOT"].get("chat_id")
+BOT_TOKEN = config["BOT"]["BOT_TOKEN"]
+proxy_set = config["BOT"].get("proxy_set", "off")
+proxy_info = config["BOT"].get("proxy_info", None)
+
 language = config["BASIC"].get("LANGUAGE", "zh-CN,zh")
 cookie = config["BASIC"].get("COOKIE", "zh-CN,zh")
 sec_ch_ua = config["BASIC"].get(
@@ -89,8 +97,13 @@ def extract_form_params(soup: BeautifulSoup) -> dict[str, dict[str, str]]:
 
 
 async def game(data):
-    from main import get_bot_app
-    bot_app = get_bot_app()
+
+    if proxy_set == "on":
+        application = ApplicationBuilder().token(BOT_TOKEN).proxy(proxy_info).build()
+    else:
+        application = ApplicationBuilder().token(BOT_TOKEN).build()
+    
+    amount = data.get("amount", 0)
     err = 0
     while err < 3:
         try:
@@ -124,11 +137,9 @@ async def game(data):
                                     if text_before_form:
                                         filename_prefix = "Player"
                                         fixed_html = fix_image_links(html, str(response.url))
-                                        image_file = await save_html_as_image(fixed_html, filename_prefix)
-                                        print(chat_id) 
-                                        await bot_app.bot.send_message(chat_id=chat_id, text="fff")                                       
-                                        await bot_app.bot.send_photo(chat_id=chat_id, photo=image_file)
-                                                                               
+                                        image_file = await save_html_as_image(fixed_html, filename_prefix)                                                                           
+                                        await application.bot.send_photo(chat_id=chat_id, photo=image_file, caption=f"作为Player的对局")  
+                                        Path(image_file).unlink()                                                                              
                                         play_logger.info(
                                             f"你有{point}点，{text_before_form}"
                                         )
@@ -136,7 +147,8 @@ async def game(data):
                                     filename_prefix = "Banker"
                                     fixed_html = fix_image_links(html, str(response.url))
                                     image_file = await save_html_as_image(fixed_html, filename_prefix)
-                                    await bot_app.bot.send_photo(chat_id=chat_id, photo=image_file)
+                                    await application.bot.send_photo(chat_id=chat_id, photo=image_file, caption=f"作为Banker的对局  金额：{amount}")
+                                    Path(image_file).unlink()
 
                             except:
                                 logger.error("未能获取到页面点数，返回22")
