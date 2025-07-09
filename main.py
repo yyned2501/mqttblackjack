@@ -7,6 +7,9 @@ import json, asyncio, random
 # 第三方库
 import aiomqtt
 from aiomqtt import MqttError, Message
+from telegram import Update
+from telegram.ext import  MessageHandler, ApplicationBuilder, CommandHandler
+from telegram.ext import ContextTypes
 
 # 自定义
 from libs.game import do_game, game_state, get_gamelist
@@ -14,6 +17,8 @@ from libs.mqtt import Client
 from libs.log import logger
 from libs.toml import read
 
+
+application = None
 HELP_TOPIC = "blackjack/help"
 GAME_TOPIC = "blackjack/games"
 STATE_TOPIC = "blackjack/states"
@@ -35,6 +40,9 @@ HOST = config["BASIC"]["HOST"]
 MQTT_USER = config["BASIC"]["MQTT_USER"]
 MQTT_PASSWORD = config["BASIC"]["MQTT_PASSWORD"]
 
+BOT_TOKEN = config["BOT"]["BOT_TOKEN"]
+proxy_set = config["BOT"].get("proxy_set", False)
+proxy_info = config["BOT"].get("proxy_info", None)
 if MYID == 0:
     logger.error("未获取到用户id，不自动开局")
 
@@ -261,6 +269,7 @@ def is_within_time_ranges(time_ranges):
 
 
 async def main():
+    global application
     if MYID not in friends:
         logger.error("非授权用户，请联系YY")
         return
@@ -271,6 +280,12 @@ async def main():
         identifier=f"{MYID}_{hash(time_module.time())}",
     )
     interval = 5
+    
+    if proxy_set:
+        application = ApplicationBuilder().token(BOT_TOKEN).proxy(proxy_info).build()
+    else:
+        application = ApplicationBuilder().token(BOT_TOKEN).build()
+
     while True:
         try:
             async with client:
@@ -282,6 +297,10 @@ async def main():
             await asyncio.sleep(interval)
         except Exception as e:
             logger.error(e, exc_info=True)
+
+def get_bot_app():
+    global application
+    return application
 
 
 if __name__ == "__main__":

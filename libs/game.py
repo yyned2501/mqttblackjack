@@ -12,18 +12,21 @@ from libs.toml import read
 from libs.image import fix_image_links, save_html_as_image
 
 
-config_basic = read("config/config.toml")["BASIC"]
-language = config_basic.get("LANGUAGE", "zh-CN,zh")
-cookie = config_basic.get("COOKIE", "zh-CN,zh")
-sec_ch_ua = config_basic.get(
+
+config = read("config/config.toml")
+chat_id = config["BOT"].get("chat_id")
+language = config["BASIC"].get("LANGUAGE", "zh-CN,zh")
+cookie = config["BASIC"].get("COOKIE", "zh-CN,zh")
+sec_ch_ua = config["BASIC"].get(
     "SEC_CH_UA", '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"'
 )
-sec_fetch_dest = config_basic.get("SEC_FETCH_DEST", "document")
-sec_fetch_mode = config_basic.get("SEC_FETCH_MODE", "cors")
-user_agent = config_basic.get(
+sec_fetch_dest = config["BASIC"].get("SEC_FETCH_DEST", "document")
+sec_fetch_mode = config["BASIC"].get("SEC_FETCH_MODE", "cors")
+user_agent = config["BASIC"].get(
     "USER_AGENT",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
 )
+
 url = "https://springsunday.net/blackjack.php"
 headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -43,6 +46,7 @@ headers = {
     "upgrade-insecure-requests": "1",
     "User-Agent": user_agent,
 }
+
 
 
 def extract_form_params(soup: BeautifulSoup) -> dict[str, dict[str, str]]:
@@ -85,6 +89,8 @@ def extract_form_params(soup: BeautifulSoup) -> dict[str, dict[str, str]]:
 
 
 async def game(data):
+    from main import get_bot_app
+    bot_app = get_bot_app()
     err = 0
     while err < 3:
         try:
@@ -118,7 +124,10 @@ async def game(data):
                                     if text_before_form:
                                         filename_prefix = "Player"
                                         fixed_html = fix_image_links(html, str(response.url))
-                                        await save_html_as_image(fixed_html, filename_prefix)
+                                        image_file = await save_html_as_image(fixed_html, filename_prefix)
+                                        print(chat_id) 
+                                        await bot_app.bot.send_message(chat_id=chat_id, text="fff")                                       
+                                        await bot_app.bot.send_photo(chat_id=chat_id, photo=image_file)
                                                                                
                                         play_logger.info(
                                             f"你有{point}点，{text_before_form}"
@@ -126,7 +135,8 @@ async def game(data):
                                 else:
                                     filename_prefix = "Banker"
                                     fixed_html = fix_image_links(html, str(response.url))
-                                    await save_html_as_image(fixed_html, filename_prefix)
+                                    image_file = await save_html_as_image(fixed_html, filename_prefix)
+                                    await bot_app.bot.send_photo(chat_id=chat_id, photo=image_file)
 
                             except:
                                 logger.error("未能获取到页面点数，返回22")
