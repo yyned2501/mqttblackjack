@@ -233,7 +233,7 @@ async def _play_game():
             game_list = await get_gamelist(play_blacklist, play_set)
             if not game_list:
                 return
-            data = random.choice(game_list)
+            data = game_list[0]
             point = play_set.get(data.get("amount", 0), None)
             if point:
                 if not await do_game(data, point, "对局"):
