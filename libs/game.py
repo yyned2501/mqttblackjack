@@ -249,7 +249,7 @@ def games_list_form_params(
             and params["amount"] in play_set
         ):
             result.append(params)
-    result.sort(key=lambda x: int(x["amount"]), reverse=True)
+    result.sort(key=lambda x: float(x["amount"]), reverse=True)
     return result
 
 
