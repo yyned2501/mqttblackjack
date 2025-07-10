@@ -71,6 +71,7 @@ auto_play = config["GAME"].get("auto_play", False)
 play_point = config["GAME"].get("play_point", 100)
 play_sleep = config["GAME"].get("play_sleep", 60)
 play_time = auto_time + natural_mode_time
+play_single_count = config["GAME"].get("play_single_count", 4)
 max_help_bonus = config["GAME"].get("max_help_bonus", 10000)
 friends_count = config["GAME"].get("friends_count", 2)
 play_blacklist = list(set(friends) | set(config["GAME"].get("play_blacklist", [])))
@@ -226,7 +227,8 @@ async def start_game(client: Client):
 
 
 async def _play_game():
-    while True:
+    count = 0
+    while count < play_single_count:
         async with lock:
             game_list = await get_gamelist(play_blacklist, play_set)
             if not game_list:
@@ -236,6 +238,7 @@ async def _play_game():
             if point:
                 if not await do_game(data, point, "对局"):
                     return
+        count += 1
         await asyncio.sleep(random.randint(1, 5))
 
 
@@ -275,7 +278,6 @@ async def main():
         identifier=f"{MYID}_{hash(time_module.time())}",
     )
     interval = 5
-    
 
     while True:
         try:

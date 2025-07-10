@@ -36,6 +36,7 @@ auto_play = false
 play_point = 10000
 play_sleep = 60
 play_set = [[100, 19], [1000, 18], [10000, 17]]
+play_single_count = 4
 max_help_bonus = 10000
 friends_count = 2
 play_blacklist = [58755]
