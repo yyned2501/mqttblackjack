@@ -39,11 +39,9 @@ async def save_html_as_image(htmltext: str, filename_prefix: str):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")    
     html_file = Path(f"temp_file/{filename_prefix}_{timestamp}.html")
     img_file = Path(f"temp_file/{filename_prefix}_{timestamp}.png")
-    html_file.parent.mkdir(parents=True, exist_ok=True)
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w", encoding="utf-8") as f:
+    html_file.parent.mkdir(parents=True, exist_ok=True)    
+    with html_file.open("w", encoding="utf-8") as f:
         f.write(htmltext)
-        html_file = f.name
 
 
     options = {
@@ -55,6 +53,5 @@ async def save_html_as_image(htmltext: str, filename_prefix: str):
     }
 
     imgkit.from_file(str(html_file), str(img_file), options=options, config=wkhtml_config)
-
     Path(html_file).unlink()    
     return img_file
