@@ -15,7 +15,7 @@ from libs.log import logger, play_logger
 from libs.toml import read
 from libs.image import fix_image_links, save_html_as_image
 
-
+amount = 0
 
 config = read("config/config.toml")
 chat_id = config["BOT"].get("chat_id")
@@ -97,7 +97,7 @@ def extract_form_params(soup: BeautifulSoup) -> dict[str, dict[str, str]]:
 
 
 async def game(data):
-    amount = 0
+    
     if proxy_set == "on":
         application = ApplicationBuilder().token(BOT_TOKEN).proxy(proxy_info).build()
     else:
