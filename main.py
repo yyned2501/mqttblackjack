@@ -267,7 +267,6 @@ def is_within_time_ranges(time_ranges):
 
 
 async def main():
-    global application
     if MYID not in friends:
         logger.error("非授权用户，请联系YY")
         return

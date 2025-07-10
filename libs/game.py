@@ -7,7 +7,7 @@ from pathlib import Path
 import aiohttp
 from bs4 import BeautifulSoup
 from telegram import Update
-from telegram.ext import  MessageHandler, ApplicationBuilder, CommandHandler
+from telegram.ext import MessageHandler, ApplicationBuilder, CommandHandler
 from telegram.ext import ContextTypes
 
 # 自定义模块
@@ -56,7 +56,6 @@ headers = {
 }
 
 
-
 def extract_form_params(soup: BeautifulSoup) -> dict[str, dict[str, str]]:
     """
     Extract parameters from all forms, using submit button text as key.
@@ -97,12 +96,12 @@ def extract_form_params(soup: BeautifulSoup) -> dict[str, dict[str, str]]:
 
 
 async def game(data):
-    
+
     if proxy_set == "on":
         application = ApplicationBuilder().token(BOT_TOKEN).proxy(proxy_info).build()
     else:
         application = ApplicationBuilder().token(BOT_TOKEN).build()
-    
+
     amount_temp = data.get("amount", 0)
     if amount_temp != 0:
         amount = amount_temp
@@ -115,7 +114,7 @@ async def game(data):
                 async with session.post(url, headers=headers, data=data) as response:
                     if response.status == 200:
                         html = await response.text()
-                        soup = BeautifulSoup(html, "lxml") 
+                        soup = BeautifulSoup(html, "lxml")
                         forms = extract_form_params(soup)
                         element = soup.select_one("#details b")
                         if element:
@@ -138,21 +137,38 @@ async def game(data):
                                     ).strip()
                                     if text_before_form:
                                         filename_prefix = "Player"
-                                        fixed_html = fix_image_links(html, str(response.url))
-                                        image_file = await save_html_as_image(fixed_html, filename_prefix)                                                                           
-                                        await application.bot.send_photo(chat_id=chat_id, photo=image_file, caption=f"作为Player的对局")  
-                                        Path(image_file).unlink()                                                                              
+                                        fixed_html = fix_image_links(
+                                            html, str(response.url)
+                                        )
+                                        image_file = await save_html_as_image(
+                                            fixed_html, filename_prefix
+                                        )
+                                        await application.bot.send_photo(
+                                            chat_id=chat_id,
+                                            photo=image_file,
+                                            caption=f"作为Player的对局",
+                                        )
+                                        Path(image_file).unlink()
                                         play_logger.info(
                                             f"你有{point}点，{text_before_form}"
                                         )
                                 else:
                                     filename_prefix = "Banker"
-                                    fixed_html = fix_image_links(html, str(response.url))
-                                    image_file = await save_html_as_image(fixed_html, filename_prefix)
-                                    await application.bot.send_photo(chat_id=chat_id, photo=image_file, caption=f"作为Banker的对局")
+                                    fixed_html = fix_image_links(
+                                        html, str(response.url)
+                                    )
+                                    image_file = await save_html_as_image(
+                                        fixed_html, filename_prefix
+                                    )
+                                    await application.bot.send_photo(
+                                        chat_id=chat_id,
+                                        photo=image_file,
+                                        caption=f"作为Banker的对局",
+                                    )
                                     Path(image_file).unlink()
 
-                            except:
+                            except Exception as e:
+                                logger.error(f"{e}", exc_info=True)
                                 logger.error("未能获取到页面点数，返回22")
                                 point = 22
                             return point, forms
