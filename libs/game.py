@@ -103,8 +103,9 @@ async def game(data):
     else:
         application = ApplicationBuilder().token(BOT_TOKEN).build()
     
-    amount_1 = data.get("amount", 0)
-    amount = max(amount_1,amount)
+    amount_temp = data.get("amount", 0)
+    if amount_temp != 0:
+        amount = amount_temp
     err = 0
     while err < 3:
         try:
