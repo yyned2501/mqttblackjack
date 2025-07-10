@@ -105,7 +105,7 @@ async def bot_push(html, response, filename_prefix):
     await application.bot.send_photo(
         chat_id=chat_id,
         photo=image_file,
-        caption=f"作为Banker的对局",
+        caption=f"作为{filename_prefix}的对局",
     )
     Path(image_file).unlink()
 
