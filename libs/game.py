@@ -97,13 +97,14 @@ def extract_form_params(soup: BeautifulSoup) -> dict[str, dict[str, str]]:
 
 
 async def game(data):
-
+    amount = 0
     if proxy_set == "on":
         application = ApplicationBuilder().token(BOT_TOKEN).proxy(proxy_info).build()
     else:
         application = ApplicationBuilder().token(BOT_TOKEN).build()
     
-    amount = data.get("amount", 0)
+    amount_1 = data.get("amount", 0)
+    amount = max(amount_1,amount)
     err = 0
     while err < 3:
         try:
