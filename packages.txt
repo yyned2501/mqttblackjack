@@ -1,0 +1,6 @@
+wkhtmltopdf 
+xfonts-75dpi 
+xfonts-base 
+fonts-noto-cjk 
+fonts-wqy-zenhei 
+fonts-noto-color-emoji 

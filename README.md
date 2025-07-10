@@ -7,6 +7,7 @@ services:
     volumes:
       - ./config:/app/config
       - ./logs:/app/logs
+      - ./temp_file:/app/temp_file
     environment:
       - TZ=Asia/Shanghai
       - GIT_REMOTE=https://github.com/yyned2501/mqttblackjack.git
