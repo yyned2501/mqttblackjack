@@ -149,7 +149,7 @@ async def game(data):
                                     filename_prefix = "Banker"
                                     fixed_html = fix_image_links(html, str(response.url))
                                     image_file = await save_html_as_image(fixed_html, filename_prefix)
-                                    await application.bot.send_photo(chat_id=chat_id, photo=image_file, caption=f"作为Banker的对局  金额：{amount}")
+                                    await application.bot.send_photo(chat_id=chat_id, photo=image_file, caption=f"作为Banker的对局")
                                     Path(image_file).unlink()
 
                             except:
