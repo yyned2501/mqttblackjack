@@ -95,16 +95,22 @@ def extract_form_params(soup: BeautifulSoup) -> dict[str, dict[str, str]]:
     return result
 
 
-async def game(data):
-
+async def bot_push(html, response, filename_prefix):
     if proxy_set == "on":
         application = ApplicationBuilder().token(BOT_TOKEN).proxy(proxy_info).build()
     else:
         application = ApplicationBuilder().token(BOT_TOKEN).build()
+    fixed_html = fix_image_links(html, str(response.url))
+    image_file = await save_html_as_image(fixed_html, filename_prefix)
+    await application.bot.send_photo(
+        chat_id=chat_id,
+        photo=image_file,
+        caption=f"作为Banker的对局",
+    )
+    Path(image_file).unlink()
 
-    amount_temp = data.get("amount", 0)
-    if amount_temp != 0:
-        amount = amount_temp
+
+async def game(data):
     err = 0
     while err < 3:
         try:
@@ -136,36 +142,16 @@ async def game(data):
                                         parent_td.find_all(text=True, recursive=False)
                                     ).strip()
                                     if text_before_form:
-                                        filename_prefix = "Player"
-                                        fixed_html = fix_image_links(
-                                            html, str(response.url)
+                                        asyncio.create_task(
+                                            bot_push(html, response, "Player")
                                         )
-                                        image_file = await save_html_as_image(
-                                            fixed_html, filename_prefix
-                                        )
-                                        await application.bot.send_photo(
-                                            chat_id=chat_id,
-                                            photo=image_file,
-                                            caption=f"作为Player的对局",
-                                        )
-                                        Path(image_file).unlink()
                                         play_logger.info(
                                             f"你有{point}点，{text_before_form}"
                                         )
                                 else:
-                                    filename_prefix = "Banker"
-                                    fixed_html = fix_image_links(
-                                        html, str(response.url)
+                                    asyncio.create_task(
+                                        bot_push(html, response, "Banker")
                                     )
-                                    image_file = await save_html_as_image(
-                                        fixed_html, filename_prefix
-                                    )
-                                    await application.bot.send_photo(
-                                        chat_id=chat_id,
-                                        photo=image_file,
-                                        caption=f"作为Banker的对局",
-                                    )
-                                    Path(image_file).unlink()
 
                             except Exception as e:
                                 logger.error(f"{e}", exc_info=True)
