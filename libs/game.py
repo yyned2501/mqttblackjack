@@ -6,6 +6,7 @@ from pathlib import Path
 # 第三方库
 import aiohttp
 from bs4 import BeautifulSoup
+from telegram.error import TimedOut
 from telegram import Update
 from telegram.ext import MessageHandler, ApplicationBuilder, CommandHandler
 from telegram.ext import ContextTypes
@@ -96,17 +97,27 @@ def extract_form_params(soup: BeautifulSoup) -> dict[str, dict[str, str]]:
 
 
 async def bot_push(html, response, filename_prefix):
+    error_time = 0
     if proxy_set == "on":
         application = ApplicationBuilder().token(BOT_TOKEN).proxy(proxy_info).build()
     else:
         application = ApplicationBuilder().token(BOT_TOKEN).build()
     fixed_html = fix_image_links(html, str(response.url))
     image_file = await save_html_as_image(fixed_html, filename_prefix)
-    await application.bot.send_document(
-        chat_id=chat_id,
-        document=image_file,
-        caption=f"作为{filename_prefix}的对局",
-    )
+    while error_time < 3:
+        try:
+            await application.bot.send_document(
+                chat_id=chat_id,
+                document=image_file,
+                caption=f"作为{filename_prefix}的对局",
+            )
+        except TimedOut as e:
+            error_time += 1
+            if error_time < 3:
+                logger.warning(f"发送图片时报错[{error_time}/3]：{e}")
+            else:
+                logger.error(f"发送图片时报错[{error_time}/3]：{e}", exc_info=True)
+
     Path(image_file).unlink()
 
 
