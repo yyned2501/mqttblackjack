@@ -289,6 +289,17 @@ async def main():
             await asyncio.sleep(interval)
         except Exception as e:
             logger.error(e, exc_info=True)
+        finally:
+            # Cancel all running tasks
+            tasks = asyncio.all_tasks() - {asyncio.current_task()}
+            for task in tasks:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass  # Expected when cancelling tasks
+                except Exception as e:
+                    logger.error(f"Error while cancelling task: {e}")
 
 
 if __name__ == "__main__":
