@@ -107,7 +107,7 @@ async def bot_push(html, response, filename_prefix, gamemsg=""):
         await application.bot.send_document(
             chat_id=chat_id,
             document=image_file,
-            caption=f"作为{filename_prefix}的对局 {gamemsg}",
+            caption=f"作为{filename_prefix}的对局 \n{gamemsg}",
         )
     except TimedOut as e:
         logger.warning(f"发送图片时报错：{e}")
@@ -149,7 +149,7 @@ async def game(data):
                                     ).strip()
                                     if text_before_form:
                                         asyncio.create_task(
-                                            bot_push(html, response, "Player", text_before_form)
+                                            bot_push(html, response, "Player", f"你有{point}点，{text_before_form}")
                                         )
                                         play_logger.info(
                                             f"你有{point}点，{text_before_form}"
