@@ -96,7 +96,7 @@ def extract_form_params(soup: BeautifulSoup) -> dict[str, dict[str, str]]:
     return result
 
 
-async def bot_push(html, response, filename_prefix):
+async def bot_push(html, response, filename_prefix, gamemsg=""):
     if proxy_set == "on":
         application = ApplicationBuilder().token(BOT_TOKEN).proxy(proxy_info).build()
     else:
@@ -107,7 +107,7 @@ async def bot_push(html, response, filename_prefix):
         await application.bot.send_document(
             chat_id=chat_id,
             document=image_file,
-            caption=f"作为{filename_prefix}的对局",
+            caption=f"作为{filename_prefix}的对局 {gamemsg}",
         )
     except TimedOut as e:
         logger.warning(f"发送图片时报错：{e}")
@@ -149,7 +149,7 @@ async def game(data):
                                     ).strip()
                                     if text_before_form:
                                         asyncio.create_task(
-                                            bot_push(html, response, "Player")
+                                            bot_push(html, response, "Player", text_before_form)
                                         )
                                         play_logger.info(
                                             f"你有{point}点，{text_before_form}"
