@@ -1,0 +1,44 @@
+[BASIC]
+COOKIE = "SPRINGID=uv1qsoge1kgk0er1kpr64unm2sk97atqm0k3pvbmgro5ljkts0vs42cgdkf42npb"
+LANGUAGE = "zh-CN,zh;q=0.9"
+SEC_CH_UA = '"Google Chrome";v="137", "Chromium";v="137", "Not/A)Brand";v="24"'
+SEC_FETCH_MODE = "navigate"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+
+[MQTT]
+HOST = "107.175.124.184"
+USER = "mqtt1234"
+PASSWORD = "mqtt1234"
+
+[BOT]
+CHAT_ID = 6091424371
+BOT_TOKEN = "7788469187:AAGO9Fim3_ulVXcasAf257XMZbr9aEHBZFI"
+PROXY_SET = "off"
+PROXY_INFO = "socks5://127.0.0.1:7897"
+
+[GAME.GLOBAL]
+SLEEP = 120
+WIN_RATE = [0.50, 0.51]
+MAX_HELP_BONUS = 100000
+FRIENDS_COUNT = 2
+
+[GAME.AFK]
+BONUS = 10000
+REMAIN_POINT = 18
+BOOM_RATE = 0.2
+TIME = [["10:00","11:30"],["12:00","14:00"],["14:30","16:00"],["16:30","18:00"],["21:00","22:30"]]
+
+[GAME.GIFT]
+BONUS = 1000
+REMAIN_POINT = 19
+
+[GAME.NATURAL]
+BONUS = 10000
+REMAIN_POINT = 17
+TIME = [["07:00","09:30"],["11:30","12:00"],["19:00","20:30"]]
+
+[GAME.PLAY]
+START = true
+SLEEP = 300
+SET = [[100, 21],[1000, 18], [10000, 17]]
+BLACKLIST = [58755]
