@@ -18,6 +18,7 @@ config.py
 reply_message.py
 dbflag.txt
 config.toml
+config_new.toml
 # 测试项目
 sessions/
 test*
