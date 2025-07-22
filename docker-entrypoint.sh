@@ -40,7 +40,8 @@ install_system_packages() {
 if [ -n "$GIT_REMOTE" ]; then
     setup_git_repo
 fi
-
+mkdir -p logs
+mkdir -p temp_file
 # 更新pip并安装必要包
 # install_pip_package pip
 # install_pip_package supervisor
