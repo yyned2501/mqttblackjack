@@ -42,14 +42,14 @@ if [ -n "$GIT_REMOTE" ]; then
 fi
 
 # 更新pip并安装必要包
-install_pip_package pip
-install_pip_package supervisor
+# install_pip_package pip
+# install_pip_package supervisor
 
-if [ -f "requirements.txt" ]; then
-    echo "安装项目依赖"
-    pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple/ \
-        --trusted-host=mirrors.aliyun.com --upgrade >/dev/null 2>&1
-fi
+# if [ -f "requirements.txt" ]; then
+#     echo "安装项目依赖"
+#     pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple/ \
+#         --trusted-host=mirrors.aliyun.com --upgrade >/dev/null 2>&1
+# fi
 
 echo "启动 supervisord"
 supervisord -c supervisord.conf -n
