@@ -16,10 +16,12 @@ RUN pip install --upgrade pip -i http://mirrors.aliyun.com/pypi/simple/ --truste
 FROM base AS dependencies
 WORKDIR /app
 COPY requirements.txt packages.txt ./
-RUN xargs -a packages.txt apt-get install -y --no-install-recommends && \
-    pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com && \
+RUN apt-get update && \
+    xargs -a packages.txt apt-get install -y --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
 
 # 最终镜像阶段
 FROM base
