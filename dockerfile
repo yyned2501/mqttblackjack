@@ -26,7 +26,8 @@ RUN pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple/ --
 # 最终镜像阶段
 FROM base
 WORKDIR /app
-COPY --from=dependencies /usr/local/lib/python${PYTHON_VERSION}/site-packages /usr/local/lib/python${PYTHON_VERSION}/site-packages
+RUN PYTHON_SHORT_VERSION=$$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+COPY --from=dependencies /usr/local/lib/python${PYTHON_SHORT_VERSION}/site-packages /usr/local/lib/python${PYTHON_SHORT_VERSION}/site-packages
 COPY --from=dependencies /usr/local/bin /usr/local/bin
 COPY docker-entrypoint.sh supervisord.conf ./
 RUN git config --global --add safe.directory /app
