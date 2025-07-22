@@ -1,5 +1,6 @@
 #!/bin/bash
-
+GIT_BRANCH="master"
+GIT_REMOTE="https://github.com/yyned2501/mqttblackjack.git"
 # 安装Python包函数
 install_pip_package() {
     local package=$1
@@ -10,12 +11,6 @@ install_pip_package() {
 
 # Git仓库操作函数
 setup_git_repo() {
-    # 设置默认分支
-    if [ -z "$GIT_BRANCH" ]; then
-        echo "GIT_BRANCH 未设置，使用默认值 master"
-        GIT_BRANCH="master"
-    fi
-
     # 初始化Git仓库（如果不存在）
     if [ ! -d ".git" ]; then
         echo "初始化Git仓库"
