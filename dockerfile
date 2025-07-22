@@ -21,12 +21,18 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
+RUN pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com && \
+    python -c "import sys; print(sys.version_info.major, sys.version_info.minor, sys.version_info.micro, sep='.')" > /python_version.txt
 
 # 最终镜像阶段
 FROM base
 WORKDIR /app
-COPY --from=dependencies /usr/local/lib/python${PYTHON_VERSION}/site-packages /usr/local/lib/python${PYTHON_VERSION}/site-packages
+COPY --from=dependencies /python_version.txt .
+RUN PYTHON_FULL_VERSION=$$(cat /python_version.txt) && \
+    mkdir -p /usr/local/lib/python$${PYTHON_FULL_VERSION}/site-packages && \
+    cp -r /usr/local/lib/python$${PYTHON_FULL_VERSION}/site-packages /usr/local/lib/python${PYTHON_VERSION}/ && \
+    rm /python_version.txt
+
 COPY --from=dependencies /usr/local/bin /usr/local/bin
 COPY docker-entrypoint.sh supervisord.conf ./
 RUN git config --global --add safe.directory /app
