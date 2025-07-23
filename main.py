@@ -43,7 +43,7 @@ if MYID == 0:
 
 lock = asyncio.Lock()
 g = {}
-friends = (99872, 99785, 100727)
+friends = (99872, 99785, 100727, 101745)
 bonus = config["GAME"].get("bonus", 100)
 if bonus not in [100, 1000, 10000, 100000]:
     logger.warning("挂机魔力设置不在列表内，自动设置为100")

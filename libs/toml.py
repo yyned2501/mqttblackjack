@@ -41,6 +41,6 @@ class Config:
         return current
 
 
+config = Config("config/config_new.toml")
 if __name__ == "__main__":
-    config = Config("config/config_new.toml")
     print(config.get("GAME.AFK.bonus", 0))
