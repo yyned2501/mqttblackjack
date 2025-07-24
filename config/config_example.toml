@@ -1,42 +1,45 @@
 [BASIC]
-LANGUAGE = ""
 COOKIE = ""
-SEC_CH_UA = ''
-SEC_FETCH_DEST = ""
-SEC_FETCH_MODE = ""
-USER_AGENT = ""
-HOST = "xxx"
-MYID = 111
-MQTT_USER = ""
-MQTT_PASSWORD = ""
+LANGUAGE = "zh-CN,zh;q=0.9"
+SEC_CH_UA = '"Google Chrome";v="137", "Chromium";v="137", "Not/A)Brand";v="24"'
+SEC_FETCH_MODE = "navigate"
+SEC_FETCH_DEST = "document"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
 
+[MQTT]
+HOST = ""
+USER = ""
+PASSWORD = ""
 
 [BOT]
-chat_id = 12345
+CHAT_ID = 12345
 BOT_TOKEN = "botapi"
-proxy_set = "on"
-proxy_info = "socks5://127.0.0.1:1000"
+PROXY_SET = "on"
+PROXY_INFO = "socks5://127.0.0.1:1000"
 
+[GAME.GLOBAL]
+SLEEP = 120
+WIN_RATE = [0.50, 0.51]
+MAX_HELP_BONUS = 100000
+FRIENDS_COUNT = 2
 
+[GAME.AFK]
+BONUS = 10000
+REMAIN_POINT = 18
+BOOM_RATE = 0.2
+TIME = [["10:00", "11:30"], ["21:00", "22:30"]]
 
-[GAME]
-bonus = 100
-remain_point = 18
-sleep = 60
-gift_model = false
-gift_remain_point = 20
-gift_bonus = 100
-natural_remain_point = 16
-natural_bonus = 100
-boom_rate = 0
-win_rate = 0.58
-natural_mode_time = []
-auto_time = []
-auto_play = false
-play_point = 10000
-play_sleep = 60
-play_set = [[100, 19], [1000, 18], [10000, 17]]
-play_single_count = 4
-max_help_bonus = 10000
-friends_count = 2
-play_blacklist = [58755]
+[GAME.GIFT]
+BONUS = 1000
+REMAIN_POINT = 19
+
+[GAME.NATURAL]
+BONUS = 10000
+REMAIN_POINT = 17
+TIME = [["07:00", "09:30"], ["19:00", "20:30"]]
+
+[GAME.PLAY]
+START = true
+SLEEP = 300
+SET = [[100, 21], [1000, 18], [10000, 17]]
+BLACKLIST = [58755]

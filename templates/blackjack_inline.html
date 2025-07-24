@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack Inline</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+        }
+        .card {
+            display: inline-block;
+            width: 50px;
+            height: 70px;
+            margin: 2px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            line-height: 70px;
+            font-size: 20px;
+        }
+        .buttons {
+            margin-top: 10px;
+        }
+        button {
+            padding: 5px 10px;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="cards"></div>
+    <div id="score">点数: 0</div>
+    <div class="buttons">
+        <button id="hit">要牌</button>
+        <button id="stand">停牌</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        // 初始化游戏状态
+        let cards = [];
+        let score = 0;
+        
+        // 从Telegram获取初始数据
+        const initData = tg.initDataUnsafe;
+        
+        // 游戏逻辑
+        document.getElementById('hit').addEventListener('click', () => {
+            // 添加要牌逻辑
+        });
+        
+        document.getElementById('stand').addEventListener('click', () => {
+            // 添加停牌逻辑
+        });
+        
+        function updateUI() {
+            const cardsEl = document.getElementById('cards');
+            cardsEl.innerHTML = cards.map(card => 
+                `<div class="card">${card}</div>`
+            ).join('');
+            
+            document.getElementById('score').textContent = `点数: ${score}`;
+        }
+    </script>
+</body>
+</html>

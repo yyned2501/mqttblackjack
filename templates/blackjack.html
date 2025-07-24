@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common.css') }}" type="text/css">
+
+</head>
+
+<body>
+    <table class="simple" cellspacing="0" cellpadding="3" width="600">
+        <tbody>
+            <tr>
+                <td colspan="2">
+                    <table id="details" width="100%" cellspacing="0" cellpadding="5" bgcolor="white">
+                        <tbody>
+                            <tr>
+                                <td align="center">
+                                    <img src="https://springsunday.net/pic/cards/2c.gif" alt="Cards" title="Cards">
+                                    <img src="https://springsunday.net/pic/cards/4c.gif" alt="Cards" title="Cards">
+                                    <img src="https://springsunday.net/pic/cards/jc.gif" alt="Cards" title="Cards">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center"><b>点数 = 16</b></td>
+                            </tr>
+                            <tr>
+                                <td align="center">你的对手是 xxx，TA有 26 点。赢局，你赢了 100000 茉莉，扣除赌场费后为 95000 茉莉。<br>
+                                    <form method="get" action="https://springsunday.net/blackjack.php"><input
+                                            type="submit" value="返回21点"></form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>

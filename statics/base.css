@@ -1,0 +1,17 @@
+:root {
+    font-size: 16px;
+
+    /* Colors */
+    --color-black: #333333;
+    --color-white: #FBFBFB;
+
+    /* Sizes */
+    --size-default: 0.875rem;
+    --size-small: 0.75rem;
+    --size-large: 1rem;
+
+    /* Typefaces */
+    --font-sans: "Helvetica Neue", Helvetica, Arial, "苹方-简", "PingFang SC", "微软雅黑", "Microsoft Yahei", "微軟正黑體", "Microsoft JhengHei", "冬青黑体", "Hiragino Sans GB", "思源黑体", "Noto Sans SC", "文泉驿正黑", "WenQuanYi Zen Hei", sans-serif;
+    --font-serif: serif;
+    --font-mono: monospace;
+}
